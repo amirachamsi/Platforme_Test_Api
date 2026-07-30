@@ -1,0 +1,49 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.page-header h1 { font-size: 22px; margin-bottom: 4px; }
+.subtitle { color: var(--bct-ink-soft); font-size: 14px; margin: 0; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.kpi-label { font-size: 12px; color: var(--bct-ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+.kpi-value-row { display: flex; align-items: baseline; gap: 8px; }
+.kpi-value { font-size: 26px; }
+.kpi-trend { font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: 6px; }
+.kpi-trend.good { color: var(--bct-teal-500); background: #e7f6ee; }
+.kpi-trend.warn { color: var(--bct-warning); background: #fdf1e6; }
+.kpi-trend.bad { color: var(--bct-danger); background: #fdecec; }
+.kpi-trend.neutral { color: var(--bct-ink-soft); background: var(--bct-bg); }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+}
+.panel { padding: 20px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.panel-header h3 { font-size: 15px; }
+.link { font-size: 13px; font-weight: 600; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th { text-align: left; color: var(--bct-ink-soft); font-weight: 600; font-size: 12px; padding: 8px 6px; border-bottom: 1px solid var(--bct-line); }
+.table td { padding: 10px 6px; border-bottom: 1px solid var(--bct-line); }
+
+.top-api-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.top-api-list li { display: flex; flex-direction: column; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid var(--bct-line); }
+.top-api-list li:last-child { border-bottom: none; padding-bottom: 0; }
+.top-api-list code { font-size: 13px; color: var(--bct-navy); }
+.metrics { display: flex; gap: 14px; font-size: 12px; color: var(--bct-ink-soft); }
+
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+}

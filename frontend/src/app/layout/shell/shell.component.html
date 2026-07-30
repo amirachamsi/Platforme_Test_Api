@@ -1,0 +1,35 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="assets/brand/logo.png" alt="Banque Centrale de Tunisie" class="brand-logo" />
+      <div class="brand-text">
+        <strong>Plateforme API</strong>
+        <span>Test &amp; supervision</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      @for (item of navItems; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active" class="nav-link">
+          <span class="dot"></span>
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user">
+        <div class="avatar">{{ (auth.currentUser() ?? '?').charAt(0).toUpperCase() }}</div>
+        <div class="user-info">
+          <strong>{{ auth.currentUser() }}</strong>
+          <span>Administrateur</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost" (click)="auth.logout()">Se déconnecter</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

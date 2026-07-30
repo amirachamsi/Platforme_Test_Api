@@ -1,0 +1,160 @@
+/* =========================================================================
+   BCT · API Test Platform — Design tokens
+   Dérivés de la charte graphique BCT (PALETTE_COULEUR_BCT.JPG)
+   Couleur principale : PANTONE 288C — R0 V33 B115
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* --- Couleur institutionnelle principale (Pantone 288C) --- */
+  --bct-navy: #002173;
+  --bct-navy-700: #001b5e;
+  --bct-navy-900: #000f3b;
+  --bct-navy-100: #e6eaf5;
+
+  /* --- Couleurs d'accompagnement (dérivées de la planche BCT) --- */
+  --bct-teal-900: #0f5c45;   /* vert foncé */
+  --bct-teal-700: #17734f;
+  --bct-teal-500: #1f8f47;   /* vert */
+  --bct-teal-300: #30ac73;   /* vert clair */
+  --bct-cyan-600: #13607c;   /* bleu-turquoise */
+  --bct-cyan-300: #478f8f;
+
+  /* --- Accents fonctionnels (issus de la 2e rangée de la planche) --- */
+  --bct-danger:  #e13a3a;
+  --bct-warning: #f2954a;
+  --bct-magenta: #c2288f;
+  --bct-info:    #2f8fd1;
+
+  /* --- Neutres --- */
+  --bct-ink:       #0b1b33;
+  --bct-ink-soft:  #4a5a72;
+  --bct-line:      #dde3ee;
+  --bct-surface:   #ffffff;
+  --bct-bg:        #f4f6fb;
+  --bct-gray-300:  #b2b2b2;
+
+  /* --- Statuts HTTP (motif signature de l'app) --- */
+  --status-2xx: var(--bct-teal-500);
+  --status-3xx: var(--bct-info);
+  --status-4xx: var(--bct-warning);
+  --status-5xx: var(--bct-danger);
+
+  /* --- Typographie --- */
+  --font-ui:   'IBM Plex Sans', -apple-system, Segoe UI, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+
+  /* --- Rayons / ombres --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 2px rgba(11, 27, 51, 0.06), 0 8px 24px rgba(11, 27, 51, 0.06);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-ui);
+  color: var(--bct-ink);
+  background: var(--bct-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+
+a { color: var(--bct-navy); text-decoration: none; }
+
+code, .mono { font-family: var(--font-mono); }
+
+button { font-family: inherit; }
+
+/* Focus visible partout (accessibilité — exigence "Accessibilité") */
+:focus-visible {
+  outline: 2px solid var(--bct-cyan-600);
+  outline-offset: 2px;
+}
+
+/* --- Composants utilitaires partagés --- */
+
+.card {
+  background: var(--bct-surface);
+  border: 1px solid var(--bct-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--bct-navy);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--bct-navy-700); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--bct-navy);
+  border-color: var(--bct-line);
+}
+.btn-ghost:hover { background: var(--bct-navy-100); }
+
+.input, select.input, textarea.input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--bct-line);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: var(--font-ui);
+  color: var(--bct-ink);
+  background: #fff;
+}
+.input:focus { border-color: var(--bct-navy); }
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bct-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+/* Puce de statut HTTP — motif signature récurrent de la plateforme */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bct-bg);
+}
+.status-chip::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-chip.s2xx { color: var(--status-2xx); }
+.status-chip.s3xx { color: var(--status-3xx); }
+.status-chip.s4xx { color: var(--status-4xx); }
+.status-chip.s5xx { color: var(--status-5xx); }
