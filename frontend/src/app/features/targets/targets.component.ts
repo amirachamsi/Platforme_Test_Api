@@ -43,8 +43,12 @@ export class TargetsComponent implements OnInit {
   
 
   ngOnInit(): void {
+    this.loadTargets();
+  }
+
+  private loadTargets(): void {
     this.api.listTargets().subscribe({
-      next: (data) => this.targets.set(data.length ? data : this.demo),
+      next: (data) => this.targets.set(data),
       error: () => this.targets.set(this.demo),
     });
   }
@@ -74,7 +78,7 @@ export class TargetsComponent implements OnInit {
     if (target.id) {
       this.api.deleteTarget(target.id).subscribe({
         next: () => {
-          this.targets.update((list) => list.filter((t) => t.id !== target.id));
+          this.loadTargets();
         },
         error: () => {
           // Fallback UI si backend déconnecté
@@ -102,14 +106,8 @@ export class TargetsComponent implements OnInit {
       : this.api.createTarget(this.form);
 
     request$.subscribe({
-      next: (savedTarget) => {
-        if (isEdit) {
-          this.targets.update((list) =>
-            list.map((t) => (t.id === savedTarget.id ? savedTarget : t))
-          );
-        } else {
-          this.targets.set([savedTarget, ...this.targets()]);
-        }
+      next: () => {
+        this.loadTargets();
         this.finishSubmit();
       },
       error: () => {

@@ -6,15 +6,12 @@ export interface ApiTarget {
   id?: number;
   nom: string;
   urlBase: string;
-  authType?: authType;
+  authType: 'NONE' | 'BEARER' | 'API_KEY' | 'OAUTH2';
   secretRef?: string;
-  
-  // Nouveaux champs optionnels pour les détails d'authentification
-  keyName?: string;     // Pour API_KEY (ex: X-API-Key)
-  keyIn?: 'HEADER' | 'QUERY'; // Pour API_KEY
-  tokenUrl?: string;    // Pour OAUTH2
-  clientId?: string;    // Pour OAUTH2
-  
+  keyName?: string;
+  keyIn?: 'HEADER' | 'QUERY';
+  tokenUrl?: string;
+  clientId?: string;
   actif?: boolean;
 }
 export interface ApiEndpoint {

@@ -5,7 +5,8 @@ import { ApiTarget, ApiEndpoint, TestCase, Execution } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = '/api/targets';
+  private apiBase = 'http://localhost:8081/api';
+  private baseUrl = `${this.apiBase}/targets`;
 
   constructor(private http: HttpClient) {}
 
@@ -31,11 +32,11 @@ export class ApiService {
     const params = targetId != null
       ? new HttpParams().set('targetId', targetId.toString())
       : undefined;
-    return this.http.get<ApiEndpoint[]>('/api/endpoints', { params });
+    return this.http.get<ApiEndpoint[]>(`${this.apiBase}/endpoints`, { params });
   }
 
   createEndpoint(e: ApiEndpoint): Observable<ApiEndpoint> { 
-    return this.http.post<ApiEndpoint>('/api/endpoints', e); 
+    return this.http.post<ApiEndpoint>(`${this.apiBase}/endpoints`, e); 
   }
 
   // --- TEST CASES ---
@@ -43,23 +44,23 @@ export class ApiService {
     const params = endpointId != null
       ? new HttpParams().set('endpointId', endpointId.toString())
       : undefined;
-    return this.http.get<TestCase[]>('/api/test-cases', { params });
+    return this.http.get<TestCase[]>(`${this.apiBase}/test-cases`, { params });
   }
 
   createTestCase(c: TestCase): Observable<TestCase> { 
-    return this.http.post<TestCase>('/api/test-cases', c); 
+    return this.http.post<TestCase>(`${this.apiBase}/test-cases`, c); 
   }
 
   // --- EXECUTIONS ---
   getExecutionStatus(id: number): Observable<Execution> { 
-    return this.http.get<Execution>(`/api/executions/${id}/status`); 
+    return this.http.get<Execution>(`${this.apiBase}/executions/${id}/status`); 
   }
 
   getExecutionResults(id: number): Observable<any> { 
-    return this.http.get(`/api/executions/${id}/results`); 
+    return this.http.get(`${this.apiBase}/executions/${id}/results`); 
   }
 
   stopExecution(id: number, motif: string): Observable<Execution> {
-    return this.http.post<Execution>(`/api/executions/${id}/stop`, { motif });
+    return this.http.post<Execution>(`${this.apiBase}/executions/${id}/stop`, { motif });
   }
 }
