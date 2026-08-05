@@ -1,11 +1,14 @@
-# Dependencies
+# Angular build and cache
+**/.angular/
 **/node_modules/
-**/target/
 **/dist/
+
+# Java / Maven
+**/target/
+.mvn/
 
 # Environment and IDEs
 .env
 .idea/
 .vscode/
 *.log
-.mvn/
