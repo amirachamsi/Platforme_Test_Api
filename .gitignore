@@ -1,11 +1,11 @@
-# Backend
+# Dependencies
+**/node_modules/
+**/target/
+**/dist/
 
-
-# Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.angular/
-
-# Env
+# Environment and IDEs
 .env
+.idea/
+.vscode/
 *.log
+.mvn/

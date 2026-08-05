@@ -1,0 +1,63 @@
+<div class="page-header">
+  <div>
+    <h1>Tableau de bord</h1>
+    <p class="subtitle">Vue d'ensemble des testcases exécutés sur les endpoints configurés.</p>
+  </div>
+  <a routerLink="/scenarios-de-test" class="btn btn-primary">Nouveau testcase</a>
+</div>
+
+<section class="kpi-grid">
+  @for (kpi of kpis; track kpi.label) {
+    <div class="card kpi-card">
+      <span class="kpi-label">{{ kpi.label }}</span>
+      <div class="kpi-value-row">
+        <strong class="kpi-value">{{ kpi.value }}</strong>
+        @if (kpi.trend) {
+          <span class="kpi-trend" [class]="kpi.tone">{{ kpi.trend }}</span>
+        }
+      </div>
+    </div>
+  }
+</section>
+
+<section class="grid-2">
+  <div class="card panel">
+    <div class="panel-header">
+      <h3>Exécutions récentes</h3>
+      <a routerLink="/historique" class="link">Voir l'historique</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr><th>Testcase</th><th>Statut</th><th>Code</th><th>Durée</th><th>Déclencheur</th></tr>
+      </thead>
+      <tbody>
+        @for (exec of recentExecutions; track exec.campagne) {
+          <tr>
+            <td>{{ exec.campagne }}</td>
+            <td><span class="status-chip" [class]="statutClass(exec.statut)">{{ exec.statut }}</span></td>
+            <td><span class="status-chip mono" [class]="statusClass(exec.code)">{{ exec.code }}</span></td>
+            <td>{{ exec.duree }}</td>
+            <td>{{ exec.declencheur }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card panel">
+    <div class="panel-header">
+      <h3>API les plus lentes</h3>
+    </div>
+    <ul class="top-api-list">
+      @for (api of topApis; track api.nom) {
+        <li>
+          <code class="mono">{{ api.nom }}</code>
+          <div class="metrics">
+            <span>p95 : {{ api.p95 }}</span>
+            <span>Erreurs : {{ api.erreurs }}</span>
+          </div>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

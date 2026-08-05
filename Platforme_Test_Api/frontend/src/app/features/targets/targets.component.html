@@ -1,0 +1,142 @@
+<div class="page-header">
+  <div>
+    <h1>Cibles &amp; API</h1>
+    <p class="subtitle">Configurez les cibles API et leurs endpoints.</p>
+  </div>
+  <button class="btn btn-primary" (click)="toggleForm()">
+    {{ showForm() ? 'Annuler' : 'Nouvelle cible' }}
+  </button>
+</div>
+
+@if (showForm()) {
+  <form class="card form-card" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <!-- Nom de la cible -->
+      <div>
+        <label class="label" for="nom">Nom de la cible</label>
+        <input class="input" id="nom" name="nom" [(ngModel)]="form.nom" required placeholder="Ex. API bancaire simulée académique" />
+      </div>
+
+      <!-- Type d'Authentification -->
+      <div>
+        <label class="label" for="authType">Authentification</label>
+        <select class="input" id="authType" name="authType" [(ngModel)]="form.authType">
+          <option value="NONE">Aucune</option>
+          <option value="BEARER">Bearer Token</option>
+          <option value="API_KEY">API Key</option>
+          <option value="OAUTH2">OAuth 2.0</option>
+        </select>
+      </div>
+
+      <!-- URL de base -->
+      <div class="span-2">
+        <label class="label" for="urlBase">URL de base</label>
+        <input class="input mono" id="urlBase" name="urlBase" [(ngModel)]="form.urlBase" required placeholder="https://<service-mock-externe>" />
+      </div>
+
+      <!-- CHAMPS DYNAMIQUES SELON L'AUTHENTIFICATION -->
+      @switch (form.authType) {
+
+        @case ('BEARER') {
+          <div class="span-2">
+            <label class="label" for="secretRef">Bearer Token / JWT</label>
+            <input class="input mono" type="password" id="secretRef" name="secretRef" [(ngModel)]="form.secretRef" placeholder="Stocké chiffré côté serveur (ex. eyJhbGci...)" />
+          </div>
+        }
+
+        @case ('API_KEY') {
+          <div>
+            <label class="label" for="keyName">Nom de la clé (Header / Paramètre)</label>
+            <input class="input" id="keyName" name="keyName" [(ngModel)]="form.keyName" placeholder="Ex. X-API-Key" />
+          </div>
+          <div>
+            <label class="label" for="keyIn">Emplacement</label>
+            <select class="input" id="keyIn" name="keyIn" [(ngModel)]="form.keyIn">
+              <option value="HEADER">Header HTTP</option>
+              <option value="QUERY">Query Parameter (?key=...)</option>
+            </select>
+          </div>
+          <div class="span-2">
+            <label class="label" for="secretRef">Valeur de la Clé API</label>
+            <input class="input mono" type="password" id="secretRef" name="secretRef" [(ngModel)]="form.secretRef" placeholder="Stocké chiffré côté serveur" />
+          </div>
+        }
+
+        @case ('OAUTH2') {
+          <div class="span-2">
+            <label class="label" for="tokenUrl">URL du Token (OAuth2 Endpoint)</label>
+            <input class="input mono" id="tokenUrl" name="tokenUrl" [(ngModel)]="form.tokenUrl" placeholder="https://auth.example.com/oauth/token" />
+          </div>
+          <div>
+            <label class="label" for="clientId">Client ID</label>
+            <input class="input" id="clientId" name="clientId" [(ngModel)]="form.clientId" placeholder="mon-client-id" />
+          </div>
+          <div>
+            <label class="label" for="secretRef">Client Secret</label>
+            <input class="input mono" type="password" id="secretRef" name="secretRef" [(ngModel)]="form.secretRef" placeholder="Stocké chiffré côté serveur" />
+          </div>
+        }
+
+        @default {
+          <div class="span-2">
+            <label class="label" for="secretRef">Référence du secret</label>
+            <input class="input" id="secretRef" name="secretRef" disabled placeholder="Non requis pour ce type d'authentification" />
+          </div>
+        }
+
+      }
+    </div>
+
+    @if (error()) { 
+      <div class="error-banner">{{ error() }}</div> 
+    }
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement…' : 'Enregistrer la cible' }}
+      </button>
+    </div>
+  </form>
+}
+
+<!-- Tableau des cibles -->
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>URL de base</th>
+        <th>Auth</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of targets(); track t.id) {
+        <tr>
+          <td><strong>{{ t.nom }}</strong></td>
+          <td><code class="mono">{{ t.urlBase }}</code></td>
+          <td><span class="badge">{{ t.authType || 'NONE' }}</span></td>
+          <td>
+            <span class="status-chip" [class]="t.actif !== false ? 's2xx' : 's4xx'">
+              {{ t.actif !== false ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="text-right actions-cell">
+            <button class="action-btn action-btn-edit" title="Modifier" (click)="editTarget(t)">
+              <span class="action-icon">✏️</span>
+              <span class="action-label">Modifier</span>
+            </button>
+            <button class="action-btn action-btn-delete" title="Supprimer" (click)="deleteTarget(t)">
+              <span class="action-icon">🗑️</span>
+              <span class="action-label">Supprimer</span>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="empty">Aucune cible configurée pour le moment.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
