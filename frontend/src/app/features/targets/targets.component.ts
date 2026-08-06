@@ -140,6 +140,8 @@ export class TargetsComponent implements OnInit {
     return {
       nom: '',
       urlBase: '',
+      endpoint: '',
+      httpMethod: 'GET',
       authType: 'NONE',
       secretRef: '',
       keyName: '',

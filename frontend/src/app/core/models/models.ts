@@ -6,6 +6,8 @@ export interface ApiTarget {
   id?: number;
   nom: string;
   urlBase: string;
+  endpoint?: string;
+  httpMethod?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   authType: 'NONE' | 'BEARER' | 'API_KEY' | 'OAUTH2';
   secretRef?: string;
   keyName?: string;

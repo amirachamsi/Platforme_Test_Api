@@ -17,6 +17,10 @@ public class ApiTarget {
 
     private String urlBase;
 
+    private String endpoint;
+
+    private HttpMethod httpMethod = HttpMethod.GET;
+
     @Enumerated(EnumType.STRING)
     private AuthType authType = AuthType.NONE;
 
