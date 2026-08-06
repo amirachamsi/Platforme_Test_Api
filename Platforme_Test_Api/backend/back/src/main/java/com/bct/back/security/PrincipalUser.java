@@ -1,6 +1,6 @@
 package com.bct.back.security;
 
-import com.bct.back.entities.Role;
+import com.bct.back.enums.Role;
 import com.bct.back.entities.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

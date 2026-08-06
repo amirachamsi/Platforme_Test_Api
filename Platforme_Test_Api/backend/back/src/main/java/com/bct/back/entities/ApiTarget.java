@@ -1,11 +1,21 @@
 package com.bct.back.entities;
 
+import com.bct.back.enums.AuthType;
+import com.bct.back.enums.KeyLocation;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@Builder
+@Getter
+@Setter
 @Entity
-@Data
-@Table(name = "api_targets")
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "targets")
 public class ApiTarget {
 
 
@@ -32,6 +42,11 @@ public class ApiTarget {
 
     private String clientId;
 
-    private boolean actif = true;
+    @Builder.Default
+    private Boolean actif = true;
+    @JsonIgnore
+    @OneToMany(mappedBy = "target", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Endpoint> endpoints = new ArrayList<>();
 }
 

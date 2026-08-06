@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../core/services/api.service';
+import { EndpointService } from '../../core/services/endpoint.service';
 import { ApiEndpoint } from '../../core/models/models';
 
 interface ScenarioItem {
@@ -77,11 +77,11 @@ export class CampaignsComponent implements OnInit {
     },
   ];
 
-  constructor(private api: ApiService) {}
+  constructor(private endpointService: EndpointService) {}
 
   ngOnInit(): void {
     this.availableScenarios = this.demoScenarios;
-    this.api.listEndpoints().subscribe({
+    this.endpointService.list().subscribe({
       next: (data) => {
         this.endpoints = data.length ? data : this.demoEndpoints;
       },

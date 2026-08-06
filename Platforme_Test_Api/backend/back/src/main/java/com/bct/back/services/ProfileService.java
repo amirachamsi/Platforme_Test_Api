@@ -4,9 +4,7 @@ import com.bct.back.DTO.ConfirmProfileUpdateRequest;
 import com.bct.back.DTO.ProfileResponse;
 import com.bct.back.DTO.ProfileUpdateInitiationResponse;
 import com.bct.back.DTO.UpdateProfileRequest;
-import com.bct.back.entities.ProfileUpdateToken;
 import com.bct.back.entities.User;
-import com.bct.back.repositories.ProfileUpdateTokenRepository;
 import com.bct.back.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,14 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
 
     private final UserRepository userRepository;
-    private final ProfileUpdateTokenRepository profileUpdateTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
@@ -31,6 +27,7 @@ public class ProfileService {
         return new ProfileResponse(user.getEmail(), user.getUsername(), user.getRole().name());
     }
 
+    @Transactional
     public ProfileUpdateInitiationResponse requestProfileUpdate(String email, UpdateProfileRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
@@ -46,57 +43,64 @@ public class ProfileService {
             throw new RuntimeException("Le nom d'utilisateur est déjà utilisé.");
         }
 
-        String tokenId = UUID.randomUUID().toString();
         String verificationCode = String.format("%06d", (int) (Math.random() * 1_000_000));
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(15);
 
-        String encodedPassword = null;
+        // Affectation explicite uniquement en cas de changement
+        if (usernameChanged) {
+            user.setNewUsername(request.getUsername());
+        }
         if (passwordChanged) {
-            encodedPassword = passwordEncoder.encode(request.getPassword());
+            user.setNewPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        ProfileUpdateToken token = ProfileUpdateToken.builder()
-                .id(tokenId)
-                .userId(user.getId())
-                .newUsername(usernameChanged ? request.getUsername() : null)
-                .newPassword(encodedPassword)
-                .verificationCode(verificationCode)
-                .expiresAt(expiresAt)
-                .build();
+        user.setProfileVerificationCode(verificationCode);
+        user.setProfileVerificationExpiresAt(expiresAt);
 
-        profileUpdateTokenRepository.save(token);
+        userRepository.save(user);
         emailService.sendVerificationCode(user.getEmail(), verificationCode);
 
-        return new ProfileUpdateInitiationResponse(tokenId, 15);
+        return new ProfileUpdateInitiationResponse(user.getEmail(), 15);
     }
 
     @Transactional
     public ProfileResponse confirmProfileUpdate(ConfirmProfileUpdateRequest request) {
-        ProfileUpdateToken token = profileUpdateTokenRepository.findById(request.getRequestId())
-                .orElseThrow(() -> new RuntimeException("Requête de confirmation introuvable."));
+        User user = userRepository.findByEmail(request.getRequestId())
+                .orElseThrow(() -> new RuntimeException("Demande de mise à jour introuvable."));
 
-        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            profileUpdateTokenRepository.delete(token);
+        if (user.getProfileVerificationCode() == null || user.getProfileVerificationExpiresAt() == null) {
+            throw new RuntimeException("Aucune demande de modification en cours.");
+        }
+
+        if (user.getProfileVerificationExpiresAt().isBefore(LocalDateTime.now())) {
+            clearPendingFields(user);
+            userRepository.save(user);
             throw new RuntimeException("Le code de confirmation a expiré.");
         }
 
-        if (!token.getVerificationCode().equals(request.getVerificationCode())) {
+        if (!user.getProfileVerificationCode().equals(request.getVerificationCode())) {
             throw new RuntimeException("Code de confirmation incorrect.");
         }
 
-        User user = userRepository.findById(token.getUserId())
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
-
-        if (token.getNewUsername() != null && !token.getNewUsername().isBlank()) {
-            user.setUsername(token.getNewUsername());
+        // Application des nouvelles valeurs si elles existent
+        if (user.getNewUsername() != null && !user.getNewUsername().isBlank()) {
+            user.setUsername(user.getNewUsername());
         }
-        if (token.getNewPassword() != null && !token.getNewPassword().isBlank()) {
-            user.setPassword(token.getNewPassword());
+        if (user.getNewPassword() != null && !user.getNewPassword().isBlank()) {
+            user.setPassword(user.getNewPassword());
         }
 
+        // Nettoyage après validation
+        clearPendingFields(user);
         userRepository.save(user);
-        profileUpdateTokenRepository.delete(token);
 
         return new ProfileResponse(user.getEmail(), user.getUsername(), user.getRole().name());
+    }
+
+    private void clearPendingFields(User user) {
+        user.setNewUsername(null);
+        user.setNewPassword(null);
+        user.setProfileVerificationCode(null);
+        user.setProfileVerificationExpiresAt(null);
     }
 }

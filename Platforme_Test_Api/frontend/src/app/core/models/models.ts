@@ -1,5 +1,6 @@
 export type HttpMethodType = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-export type TestStatus = 'BROUILLON' | 'EN_ATTENTE' | 'EN_COURS' | 'REUSSIE' | 'ECHOUEE' | 'INTERROMPUE';
+export type TestStatus =  'EN_ATTENTE' | 'EN_COURS' | 'REUSSIE' | 'ECHOUEE' | 'INTERROMPUE';
+export type typeStatus = 'FONCTIONNEL' | 'PERFORMANCE' | 'SECURITE' | 'CHARGE';
 export type authType = 'NONE' | 'BEARER' | 'OAUTH2' | 'API_KEY';
 
 export interface ApiTarget {
@@ -21,6 +22,8 @@ export interface ApiEndpoint {
   methode: HttpMethodType;
   chemin: string;
   headers?: string;
+  params?: string;
+  contentType?: string;
   body?: string;
   codeAttendu?: number;
   tempsMaxMs?: number;
@@ -30,8 +33,8 @@ export interface TestCase {
   id?: number;
   endpoint: { id: number } | ApiEndpoint;
   nom: string;
-  typeStatus?: TestStatus;  // Fonctionnel, Performance, Sécurité, Résilience
-  
+  typeStatus?: typeStatus;  // Fonctionnel, Performance, Sécurité, Résilience
+  teststatus?: TestStatus;      // EN_ATTENTE, EN_COURS, REUSSIE, ECHOUEE, INTERROMPUE
   seuilMs?: number;         // Objectif P95 cible (ex: < 1000 ms)
   tauxErreurMax?: number;   // Objectif Taux d'erreur max (ex: < 2%)
   timeoutMs?: number;       // Timeout limite

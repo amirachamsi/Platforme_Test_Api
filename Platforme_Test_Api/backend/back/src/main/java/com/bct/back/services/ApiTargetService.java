@@ -1,9 +1,12 @@
 package com.bct.back.services;
 
-
-import com.bct.back.entities.*;
+import com.bct.back.entities.ApiTarget;
+import com.bct.back.enums.AuthType;
+import com.bct.back.enums.KeyLocation;
 import com.bct.back.repositories.ApiTargetRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,21 +28,19 @@ public class ApiTargetService {
         this.repository = repository;
     }
 
-    // Returns every target, pinging each one first so `actif` is up to date
+    // Simple lecture, sans effet de bord : pas de ping ici (voir pingAndRefresh).
     public List<ApiTarget> findAll() {
-        List<ApiTarget> targets = repository.findAll();
-        for (ApiTarget target : targets) {
-            ping(target);
-        }
-        return repository.saveAll(targets);
+        return repository.findAll();
     }
 
     public ApiTarget findById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cible introuvable (id=" + id + ")"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Cible introuvable (id=" + id + ")"));
     }
 
     public ApiTarget create(ApiTarget target) {
+        target.setId(null); // évite un UPDATE accidentel si un id est déjà présent dans le payload
         return repository.save(target);
     }
 
@@ -53,12 +54,27 @@ public class ApiTargetService {
         existing.setKeyIn(updated.getKeyIn());
         existing.setTokenUrl(updated.getTokenUrl());
         existing.setClientId(updated.getClientId());
-        existing.setActif(updated.isActif());
+        if (updated.getActif() != null) {
+            existing.setActif(updated.getActif()); // Boolean wrapper -> getActif(), pas isActif()
+        }
         return repository.save(existing);
     }
 
     public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Cible introuvable (id=" + id + ")");
+        }
         repository.deleteById(id);
+    }
+
+    // Endpoint explicite (ex. POST /api/targets/{id}/ping) : opération à effet de bord,
+    // volontairement séparée de findAll() pour ne pas déclencher d'appels HTTP sortants
+    // sur un simple GET, et pour rester appelable un par un plutôt qu'en boucle bloquante.
+    public ApiTarget pingAndRefresh(Long id) {
+        ApiTarget target = findById(id);
+        ping(target);
+        return repository.save(target);
     }
 
     // Pings the target's URL (with its auth attached) and updates `actif`.

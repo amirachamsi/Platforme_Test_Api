@@ -1,6 +1,6 @@
 package com.bct.back.config;
 
-import com.bct.back.entities.Role;
+import com.bct.back.enums.Role;
 import com.bct.back.entities.User;
 import com.bct.back.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +18,10 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${ADMIN_EMAIL}")
+    @Value("${ADMIN_EMAIL:admin@bct.tn}")
     private String adminEmail;
 
-    @Value("${ADMIN_PASSWORD}")
+    @Value("${ADMIN_PASSWORD:123456789}")
     private String adminPassword;
 
     @Override

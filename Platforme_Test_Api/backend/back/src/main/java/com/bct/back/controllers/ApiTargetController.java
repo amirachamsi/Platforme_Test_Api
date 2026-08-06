@@ -1,7 +1,9 @@
 package com.bct.back.controllers;
 
-import com.bct.back.entities.*;
+import com.bct.back.entities.ApiTarget;
 import com.bct.back.services.ApiTargetService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,39 +12,35 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/targets")
-@CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class ApiTargetController {
 
-    private final ApiTargetService service;
-
-    public ApiTargetController(ApiTargetService service) {
-        this.service = service;
-    }
+    private final ApiTargetService apiTargetService;
 
     @GetMapping
-    public List<ApiTarget> getAll() {
-        return service.findAll();
+    public List<ApiTarget> findAll() {
+        return apiTargetService.findAll();
     }
 
     @GetMapping("/{id}")
-    public ApiTarget getOne(@PathVariable Long id) {
-        return service.findById(id);
+    public ApiTarget findById(@PathVariable Long id) {
+        return apiTargetService.findById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiTarget create(@RequestBody ApiTarget target) {
-        return service.create(target);
+    public ApiTarget create(@Valid @RequestBody ApiTarget target) {
+        return apiTargetService.create(target);
     }
 
     @PutMapping("/{id}")
-    public ApiTarget update(@PathVariable Long id, @RequestBody ApiTarget target) {
-        return service.update(id, target);
+    public ApiTarget update(@PathVariable Long id, @Valid @RequestBody ApiTarget target) {
+        return apiTargetService.update(id, target);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
+        apiTargetService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

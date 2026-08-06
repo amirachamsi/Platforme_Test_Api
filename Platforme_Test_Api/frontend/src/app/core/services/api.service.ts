@@ -35,8 +35,16 @@ export class ApiService {
     return this.http.get<ApiEndpoint[]>(`${this.apiBase}/endpoints`, { params });
   }
 
-  createEndpoint(e: ApiEndpoint): Observable<ApiEndpoint> { 
-    return this.http.post<ApiEndpoint>(`${this.apiBase}/endpoints`, e); 
+  createEndpoint(e: ApiEndpoint): Observable<ApiEndpoint> {
+    return this.http.post<ApiEndpoint>(`${this.apiBase}/endpoints`, e);
+  }
+
+  updateEndpoint(id: number, endpoint: ApiEndpoint): Observable<ApiEndpoint> {
+    return this.http.put<ApiEndpoint>(`${this.apiBase}/endpoints/${id}`, endpoint);
+  }
+
+  deleteEndpoint(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/endpoints/${id}`);
   }
 
   // --- TEST CASES ---

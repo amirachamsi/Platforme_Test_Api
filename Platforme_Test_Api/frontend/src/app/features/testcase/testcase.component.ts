@@ -1,11 +1,13 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../core/services/api.service';
-import { ApiEndpoint } from '../../core/models/models';
+import { EndpointService } from '../../core/services/endpoint.service';
+import { TestcaseService } from '../../core/services/testcase.service';
+import { ApiEndpoint, TestCase, typeStatus } from '../../core/models/models';
 
 interface TestcaseItem {
   id: number;
+  endpointId: number;
   nom: string;
   typeTest: string;
   endpoint: string;
@@ -34,74 +36,24 @@ export class TestcaseComponent implements OnInit {
   progress = signal(0);
   progressLabel = signal('Prêt');
 
-  form = {
-    nom: '',
-    typeTest: 'fonctionnel',
-    endpointId: '',
-    preconditions: '',
-    headers: '',
-    donnees: '',
-    vus: 10,
-    codeAttendu: 200,
-    seuilMs: 1000,
-    assertions: '',
-  };
+  form = this.emptyForm();
 
-  private readonly demoEndpoints: ApiEndpoint[] = [
-    { id: 1, target: { id: 1 }, nom: 'Vérification solde', methode: 'GET', chemin: '/api/clients/solde' },
-    { id: 2, target: { id: 1 }, nom: 'Création de virement', methode: 'POST', chemin: '/api/virements' },
-    { id: 3, target: { id: 1 }, nom: 'Consultation historique', methode: 'GET', chemin: '/api/operations/historique' },
-  ];
-
-  private readonly demoScenarios: TestcaseItem[] = [
-    {
-      id: 1,
-      nom: 'Scénario solde',
-      typeTest: 'Fonctionnel',
-      endpoint: 'GET /api/clients/solde',
-      codeAttendu: 200,
-      seuilMs: 800,
-      assertions: 'Vérification du statut 200 et du contenu du payload.',
-      preconditions: 'Le compte doit être actif et avoir un solde de référence.',
-      headers: '{ "Content-Type": "application/json" }',
-      donnees: '{ "compte": "ACC-001" }',
-      vus: 10,
-    },
-    {
-      id: 2,
-      nom: 'Scénario virement',
-      typeTest: 'Sécurité',
-      endpoint: 'POST /api/virements',
-      codeAttendu: 201,
-      seuilMs: 1200,
-      assertions: 'Validation des permissions et du format des données.',
-      preconditions: 'Le bénéficiaire doit être enregistré et le montant doit être positif.',
-      headers: '{ "Content-Type": "application/json", "X-Correlation-ID": "12345" }',
-      donnees: '{ "compteSource": "ACC-001", "compteCible": "ACC-002", "montant": 150.0 }',
-      vus: 25,
-    },
-  ];
-
-  constructor(private api: ApiService) {}
+  constructor(
+    private endpointService: EndpointService,
+    private testcaseService: TestcaseService,
+  ) {}
 
   ngOnInit(): void {
-    this.api.listEndpoints().subscribe({
-      next: (data) => {
-        this.endpoints = data.length ? data : this.demoEndpoints;
-        this.scenarios.set(this.demoScenarios);
-      },
-      error: () => {
-        this.endpoints = this.demoEndpoints;
-        this.scenarios.set(this.demoScenarios);
-      },
+    this.endpointService.list().subscribe({
+      next: (endpoints) => this.endpoints = endpoints,
+      error: () => this.endpoints = [],
     });
+    this.loadTestCases();
   }
 
   toggleForm(): void {
     this.showForm.set(!this.showForm());
-    if (!this.showForm()) {
-      this.resetForm();
-    }
+    if (!this.showForm()) this.resetForm();
   }
 
   editScenario(scenario: TestcaseItem): void {
@@ -109,7 +61,7 @@ export class TestcaseComponent implements OnInit {
     this.form = {
       nom: scenario.nom,
       typeTest: this.getValueKey(scenario.typeTest),
-      endpointId: '',
+      endpointId: String(scenario.endpointId),
       preconditions: scenario.preconditions ?? '',
       headers: scenario.headers ?? '',
       donnees: scenario.donnees ?? '',
@@ -125,33 +77,30 @@ export class TestcaseComponent implements OnInit {
     const endpointId = Number(this.form.endpointId);
     if (!this.form.nom || !endpointId) return;
 
-    const endpoint = this.endpoints.find((item) => item.id === endpointId);
-    const nextScenario: TestcaseItem = {
-      id: this.editingId() ?? Date.now(),
+    const payload: TestCase = {
+      endpoint: { id: endpointId },
       nom: this.form.nom,
-      typeTest: this.getTestLabel(this.form.typeTest),
-      endpoint: endpoint ? `${endpoint.methode} ${endpoint.chemin}` : `Endpoint #${endpointId}`,
-      codeAttendu: Number(this.form.codeAttendu),
+      typeStatus: this.toApiTestType(this.form.typeTest),
       seuilMs: Number(this.form.seuilMs),
-      assertions: this.form.assertions || 'Vérification des règles métier et du statut HTTP.',
-      preconditions: this.form.preconditions || undefined,
-      headers: this.form.headers || undefined,
-      donnees: this.form.donnees || undefined,
-      vus: Number(this.form.vus || 0),
+      timeoutMs: Number(this.form.seuilMs),
     };
+    const request$ = this.editingId() === null
+      ? this.testcaseService.create(payload)
+      : this.testcaseService.update(this.editingId()!, payload);
 
-    if (this.editingId() !== null) {
-      this.scenarios.update((list) => list.map((item) => item.id === nextScenario.id ? nextScenario : item));
-    } else {
-      this.scenarios.set([nextScenario, ...this.scenarios()]);
-    }
-
-    this.showForm.set(false);
-    this.resetForm();
+    request$.subscribe({
+      next: () => {
+        this.loadTestCases();
+        this.showForm.set(false);
+        this.resetForm();
+      },
+    });
   }
 
   deleteScenario(scenario: TestcaseItem): void {
-    this.scenarios.set(this.scenarios().filter((item) => item.id !== scenario.id));
+    this.testcaseService.delete(scenario.id).subscribe({
+      next: () => this.scenarios.update((items) => items.filter((item) => item.id !== scenario.id)),
+    });
   }
 
   runScenario(scenario: TestcaseItem): void {
@@ -160,42 +109,61 @@ export class TestcaseComponent implements OnInit {
     this.progressLabel.set('Initialisation du test…');
 
     const interval = window.setInterval(() => {
-      const current = this.progress();
-      if (current >= 100) {
-        window.clearInterval(interval);
-        this.progress.set(100);
-        this.progressLabel.set('Test terminé');
-        this.runningId.set(null);
-        return;
-      }
-
-      const next = Math.min(100, current + 10);
+      const next = Math.min(100, this.progress() + 10);
       this.progress.set(next);
-      this.progressLabel.set(`Test en cours… ${100 - next}% restant`);
+      this.progressLabel.set(next === 100 ? 'Test terminé' : `Test en cours… ${100 - next}% restant`);
+      if (next === 100) {
+        window.clearInterval(interval);
+        this.runningId.set(null);
+      }
     }, 400);
+  }
+
+  private loadTestCases(): void {
+    this.testcaseService.list().subscribe({
+      next: (testCases) => this.scenarios.set(testCases.map((testCase) => this.toScenario(testCase))),
+      error: () => this.scenarios.set([]),
+    });
+  }
+
+  private toScenario(testCase: TestCase): TestcaseItem {
+    const endpoint = testCase.endpoint as ApiEndpoint;
+    return {
+      id: testCase.id!,
+      endpointId: endpoint.id!,
+      nom: testCase.nom,
+      typeTest: this.getTestLabelFromApi(testCase.typeStatus),
+      endpoint: `${endpoint.methode} ${endpoint.chemin}`,
+      codeAttendu: endpoint.codeAttendu ?? 200,
+      seuilMs: testCase.seuilMs ?? 0,
+      assertions: 'Vérification des règles métier et du statut HTTP.',
+      vus: 0,
+    };
   }
 
   private resetForm(): void {
     this.editingId.set(null);
-    this.form = {
-      nom: '',
-      typeTest: 'fonctionnel',
-      endpointId: '',
-      preconditions: '',
-      headers: '',
-      donnees: '',
-      vus: 10,
-      codeAttendu: 200,
-      seuilMs: 1000,
-      assertions: '',
-    };
+    this.form = this.emptyForm();
   }
 
-  private getTestLabel(value: string): string {
+  private emptyForm() {
+    return { nom: '', typeTest: 'fonctionnel', endpointId: '', preconditions: '', headers: '', donnees: '', vus: 10, codeAttendu: 200, seuilMs: 1000, assertions: '' };
+  }
+
+  private toApiTestType(value: string): typeStatus {
     switch (value) {
-      case 'charge': return 'Charge';
-      case 'securite': return 'Sécurité';
-      case 'performance': return 'Performance';
+      case 'charge': return 'CHARGE';
+      case 'securite': return 'SECURITE';
+      case 'performance': return 'PERFORMANCE';
+      default: return 'FONCTIONNEL';
+    }
+  }
+
+  private getTestLabelFromApi(value?: typeStatus): string {
+    switch (value) {
+      case 'CHARGE': return 'Charge';
+      case 'SECURITE': return 'Sécurité';
+      case 'PERFORMANCE': return 'Performance';
       default: return 'Fonctionnel';
     }
   }
