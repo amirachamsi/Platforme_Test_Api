@@ -2,7 +2,7 @@
 
 
 # Frontend
-frontend/node_modules/
+Platforme_Test_Api/frontend/node_modules/
 frontend/dist/
 frontend/.angular/
 

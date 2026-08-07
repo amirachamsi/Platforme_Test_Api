@@ -1,0 +1,40 @@
+<div class="profile-page">
+  <div class="profile-card card">
+    <h2>Mon profil</h2>
+    <p>Gérez votre nom d’utilisateur et votre mot de passe. Une confirmation par email est requise.</p>
+
+    <div class="field">
+      <label>Email</label>
+      <input class="input" type="email" [value]="email" disabled />
+    </div>
+
+    <div class="field">
+      <label>Nom d’utilisateur</label>
+      <input class="input" type="text" [(ngModel)]="username" />
+    </div>
+
+    <div class="field">
+      <label>Nouveau mot de passe</label>
+      <input class="input" type="password" [(ngModel)]="password" placeholder="Laissez vide pour ne pas changer" />
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" (click)="submitUpdate()" [disabled]="loading()">Demander la mise à jour</button>
+    </div>
+
+    @if (message()) {
+      <div class="alert success">{{ message() }}</div>
+    }
+    @if (error()) {
+      <div class="alert error">{{ error() }}</div>
+    }
+
+    @if (confirmationSent()) {
+      <div class="confirmation-section">
+        <label>Code de confirmation</label>
+        <input class="input" type="text" [(ngModel)]="confirmationCode" />
+        <button class="btn btn-secondary" (click)="confirmUpdate()" [disabled]="loading()">Confirmer</button>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,178 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.page-header h1 { font-size: 22px; margin-bottom: 4px; }
+.subtitle { color: var(--bct-ink-soft); font-size: 14px; margin: 0; }
+
+.targets-section { margin-bottom: 28px; }
+.target-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.target-card { background: #fff; border: 1px solid var(--bct-line); border-radius: var(--radius-md); box-shadow: 0 3px 12px rgba(13, 36, 71, .06); padding: 18px; transition: border-color .2s, box-shadow .2s; }
+.target-card.selected { border: 2px solid var(--bct-navy); box-shadow: 0 8px 22px rgba(13, 36, 71, .16); }
+.target-card-header { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; }
+.target-card h3 { font-size: 16px; margin: 0; }
+.target-url { color: var(--bct-ink-soft); display: block; font-size: 12px; margin: 14px 0 18px; overflow-wrap: anywhere; }
+.target-card-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+.auth-badge, .method-badge { border-radius: 999px; font-size: 11px; font-weight: 700; padding: 5px 9px; }
+.auth-badge { background: #eef1f6; color: var(--bct-ink-soft); }
+.auth-bearer { background: #e9f0ff; color: #145cc4; }
+.auth-api-key { background: #fff3df; color: #ad6200; }
+.auth-oauth { background: #eee8ff; color: #6841ad; }
+.endpoints-empty-state, .empty-state { background: #f7f9fc; border: 1px dashed #b8c6d9; border-radius: var(--radius-md); color: var(--bct-ink-soft); padding: 28px; text-align: center; }
+.endpoints-empty-state { margin-top: 4px; }
+.endpoints-empty-state h2 { color: var(--bct-ink); font-size: 18px; margin: 0 0 6px; }
+.endpoints-empty-state p { margin: 0; }
+.legacy-targets-table { display: none; }
+.method-badge { display: inline-block; background: #edf1f7; color: var(--bct-ink-soft); }
+.method-badge.method-get { background: #e5f7eb; color: #16803a; }
+.method-badge.method-post { background: #e8f0ff; color: #145cc4; }
+.method-badge.method-put { background: #fff0df; color: #b35e00; }
+.method-badge.method-delete { background: #ffe9e9; color: #c33131; }
+
+.form-card { padding: 22px 24px; margin-bottom: 20px; }
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.span-2 { grid-column: span 2; }
+.combined-section {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bct-line);
+}
+.combined-section h2 { font-size: 17px; margin: 0 0 4px; }
+.form-actions { display: flex; justify-content: flex-end; }
+.form-actions { gap: 10px; }
+
+.stepper, .endpoint-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--bct-line); margin-bottom: 24px; }
+.stepper button, .endpoint-tabs button { background: transparent; border: 0; color: var(--bct-ink-soft); cursor: pointer; font-weight: 600; padding: 10px 14px; }
+.stepper button.active, .endpoint-tabs button.active { color: var(--bct-navy); border-bottom: 2px solid var(--bct-navy); }
+.endpoint-tabs { margin: 0; }
+.url-preview { background: #f2f6ff; border: 1px solid #d6e1f7; border-radius: var(--radius-sm); color: var(--bct-navy); font-family: monospace; overflow-wrap: anywhere; padding: 11px 12px; }
+.http-method { font-weight: 700; }
+.method-get { color: #16803a; border-color: #76c893; }
+.method-post { color: #145cc4; border-color: #84b4f7; }
+.method-delete { color: #c33131; border-color: #ec9d9d; }
+.body-toolbar { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.json-error { color: var(--bct-danger); display: block; margin-top: 6px; }
+.kv-row input[type='checkbox'] { accent-color: var(--bct-navy); width: 16px; }
+
+@media (max-width: 720px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .span-2 { grid-column: span 1; }
+  .stepper, .endpoint-tabs { overflow-x: auto; }
+}
+
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th { text-align: left; color: var(--bct-ink-soft); font-weight: 600; font-size: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bct-line); }
+.table td { padding: 12px 16px; border-bottom: 1px solid var(--bct-line); }
+.table tr:last-child td { border-bottom: none; }
+.empty { text-align: center; color: var(--bct-ink-soft); padding: 28px; }
+
+.actions-cell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(13, 36, 71, 0.12);
+}
+
+.action-btn-edit {
+  background: rgba(43, 91, 180, 0.10);
+  color: var(--bct-navy);
+}
+
+.action-btn-ping {
+  background: rgba(36, 131, 96, 0.10);
+  color: #1f7a57;
+}
+
+.action-btn-delete {
+  background: rgba(212, 63, 63, 0.10);
+  color: var(--bct-danger);
+}
+
+.action-icon {
+  font-size: 13px;
+}
+
+.action-label {
+  line-height: 1;
+}
+
+.status-pill {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 9px;
+  text-transform: uppercase;
+}
+
+.status-unknown {
+  background: #eef1f6;
+  color: var(--bct-ink-soft);
+}
+
+.status-up {
+  background: #e5f7eb;
+  color: #16803a;
+}
+
+.status-down {
+  background: #ffe9e9;
+  color: #c33131;
+}
+
+.status-loading {
+  background: #f2f6ff;
+  color: var(--bct-navy);
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+  border: 2px solid rgba(43, 91, 180, 0.22);
+  border-top-color: var(--bct-navy);
+  border-radius: 50%;
+  display: inline-block;
+  height: 12px;
+  width: 12px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-banner {
+  background: #fdecec;
+  color: var(--bct-danger);
+  border: 1px solid #f6c6c6;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}

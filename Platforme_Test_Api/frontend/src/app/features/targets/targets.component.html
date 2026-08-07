@@ -1,0 +1,442 @@
+<div class="page-header">
+ 
+  <button class="btn btn-primary" (click)="toggleForm()">
+    {{ showForm() ? 'Annuler' : 'Nouvelle cible' }}
+  </button>
+</div>
+
+@if (showForm()) {
+  <form class="card form-card" (ngSubmit)="submit()">
+    @if (editingId() === null) {
+      <nav class="stepper" aria-label="Étapes de configuration">
+        <button type="button" [class.active]="formStep() === 1" (click)="goToStep(1)">1. Cible</button>
+        <button type="button" [class.active]="formStep() === 2" (click)="goToStep(2)">2. Requête</button>
+        <button type="button" [class.active]="formStep() === 3" (click)="goToStep(3)">3. Critères</button>
+      </nav>
+    }
+    <div class="form-grid">
+      @if (editingId() !== null || formStep() === 1) {
+      <!-- Nom de la cible -->
+      <div>
+        <label class="label" for="nom">Nom de la cible</label>
+        <input class="input" id="nom" name="nom" [(ngModel)]="form.nom" required placeholder="Ex. API bancaire simulée académique" />
+      </div>
+
+      <!-- Type d'Authentification -->
+      <div>
+        <label class="label" for="authType">Authentification</label>
+        <select class="input" id="authType" name="authType" [(ngModel)]="form.authType">
+          <option value="NONE">Aucune</option>
+          <option value="BEARER">Bearer Token</option>
+          <option value="API_KEY">API Key</option>
+          <option value="OAUTH2">OAuth 2.0</option>
+        </select>
+      </div>
+
+      <!-- URL de base -->
+      <div class="span-2">
+        <label class="label" for="urlBase">URL de base</label>
+        <input class="input mono" id="urlBase" name="urlBase" [(ngModel)]="form.urlBase" required placeholder="https://<service-mock-externe>" />
+      </div>
+
+      <!-- CHAMPS DYNAMIQUES SELON L'AUTHENTIFICATION -->
+      @switch (form.authType) {
+
+        @case ('BEARER') {
+          <div class="span-2">
+            <label class="label" for="secretRef">Bearer Token / JWT</label>
+            <input class="input mono" type="password" id="secretRef" name="secretRef" [(ngModel)]="form.secretRef" placeholder="Stocké chiffré côté serveur (ex. eyJhbGci...)" />
+          </div>
+        }
+
+        @case ('API_KEY') {
+          <div>
+            <label class="label" for="keyName">Nom de la clé (Header / Paramètre)</label>
+            <input class="input" id="keyName" name="keyName" [(ngModel)]="form.keyName" placeholder="Ex. X-API-Key" />
+          </div>
+          <div>
+            <label class="label" for="keyIn">Emplacement</label>
+            <select class="input" id="keyIn" name="keyIn" [(ngModel)]="form.keyIn">
+              <option value="HEADER">Header HTTP</option>
+              <option value="QUERY">Query Parameter (?key=...)</option>
+            </select>
+          </div>
+          <div class="span-2">
+            <label class="label" for="secretRef">Valeur de la Clé API</label>
+            <input class="input mono" type="password" id="secretRef" name="secretRef" [(ngModel)]="form.secretRef" placeholder="Stocké chiffré côté serveur" />
+          </div>
+        }
+
+        @case ('OAUTH2') {
+          <div class="span-2">
+            <label class="label" for="tokenUrl">URL du Token (OAuth2 Endpoint)</label>
+            <input class="input mono" id="tokenUrl" name="tokenUrl" [(ngModel)]="form.tokenUrl" placeholder="https://auth.example.com/oauth/token" />
+          </div>
+          <div>
+            <label class="label" for="clientId">Client ID</label>
+            <input class="input" id="clientId" name="clientId" [(ngModel)]="form.clientId" placeholder="mon-client-id" />
+          </div>
+          <div>
+            <label class="label" for="secretRef">Client Secret</label>
+            <input class="input mono" type="password" id="secretRef" name="secretRef" [(ngModel)]="form.secretRef" placeholder="Stocké chiffré côté serveur" />
+          </div>
+        }
+
+        @default {
+          <div class="span-2">
+            <label class="label" for="secretRef">Référence du secret</label>
+            <input class="input" id="secretRef" name="secretRef" disabled placeholder="Non requis pour ce type d'authentification" />
+          </div>
+        }
+
+      }
+
+      }
+
+      @if (editingId() === null && formStep() === 2) {
+        <div class="span-2 combined-section">
+          <h2>Premier endpoint</h2>
+          <p class="subtitle">Configurez-le maintenant pour enregistrer la cible et son endpoint en une seule fois.</p>
+        </div>
+        <div>
+          <label class="label" for="initialEndpointNom">Nom de l'endpoint</label>
+          <input class="input" id="initialEndpointNom" name="initialEndpointNom" [(ngModel)]="endpointForm.nom" placeholder="Ex. Consultation du solde" />
+        </div>
+        <div>
+          <label class="label" for="initialMethode">Méthode HTTP</label>
+          <select class="input http-method" [class.method-get]="endpointForm.methode === 'GET'" [class.method-post]="endpointForm.methode === 'POST'" [class.method-delete]="endpointForm.methode === 'DELETE'" id="initialMethode" name="initialMethode" [(ngModel)]="endpointForm.methode">
+            <option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option>
+          </select>
+        </div>
+        <div class="span-2">
+          <label class="label" for="initialChemin">Chemin (Path)</label>
+          <input class="input mono" id="initialChemin" name="initialChemin" [(ngModel)]="endpointForm.chemin" placeholder="Ex. /api/v1/clients/solde" />
+        </div>
+        <div class="span-2 url-preview"><strong>{{ endpointForm.methode }}</strong> {{ previewUrl() }}</div>
+        <div class="span-2 endpoint-tabs">
+          <button type="button" [class.active]="endpointTab() === 'params'" (click)="endpointTab.set('params')">Query Params</button>
+          <button type="button" [class.active]="endpointTab() === 'headers'" (click)="endpointTab.set('headers')">Headers</button>
+          @if (isBodySupported()) { <button type="button" [class.active]="endpointTab() === 'body'" (click)="endpointTab.set('body')">Body</button> }
+        </div>
+        @if (endpointTab() === 'params') {
+        <div class="span-2">
+          <label class="label">Paramètres d'URL (Query Params)</label>
+          <div class="kv-list">
+            <div *ngFor="let param of endpointParams; let i = index" class="kv-row">
+              <input type="checkbox" [(ngModel)]="endpointParams[i].enabled" (ngModelChange)="onParamChange()" name="initialParamEnabled{{ i }}" title="Activer le paramètre" />
+              <input class="input kv-key" [(ngModel)]="endpointParams[i].key" (ngModelChange)="onParamChange()" name="initialParamKey{{ i }}" placeholder="Clef (ex. page)" />
+              <input class="input kv-val" [(ngModel)]="endpointParams[i].value" (ngModelChange)="onParamChange()" name="initialParamValue{{ i }}" placeholder="Valeur (ex. 1)" />
+              <button type="button" class="btn btn-link" (click)="removeParam(i)">Supprimer</button>
+            </div>
+            <button type="button" class="btn btn-secondary" (click)="addParam()">+ Ajouter un paramètre</button>
+          </div>
+        </div>
+        }
+        @if (endpointTab() === 'headers') {
+        <div class="span-2">
+          <label class="label">En-têtes (Headers)</label>
+          <div class="kv-list">
+            <div *ngFor="let header of endpointHeaders; let i = index" class="kv-row">
+              <input type="checkbox" [(ngModel)]="endpointHeaders[i].enabled" (ngModelChange)="onHeaderChange()" name="initialHeaderEnabled{{ i }}" title="Activer l'en-tête" />
+              <input class="input kv-key" list="commonHeaders" [(ngModel)]="endpointHeaders[i].key" (ngModelChange)="onHeaderChange()" name="initialHeaderKey{{ i }}" placeholder="Clef (ex. Content-Type)" />
+              <input class="input kv-val mono" [(ngModel)]="endpointHeaders[i].value" (ngModelChange)="onHeaderChange()" name="initialHeaderValue{{ i }}" placeholder="Valeur (ex. application/json)" />
+              <button type="button" class="btn btn-link" (click)="removeHeader(i)">Supprimer</button>
+            </div>
+            <button type="button" class="btn btn-secondary" (click)="addHeader()">+ Ajouter un header</button>
+          </div>
+        </div>
+        }
+        @if (endpointTab() === 'body' && isBodySupported()) {
+        <div>
+          <label class="label" for="initialContentType">Content-Type</label>
+          <select class="input" id="initialContentType" name="initialContentType" [(ngModel)]="endpointForm.contentType"><option value="application/json">application/json</option><option value="text/plain">text/plain</option></select>
+        </div>
+        <div class="span-2">
+          <label class="label" for="initialBody">Body (Corps de la requête)</label>
+          <div class="body-toolbar"><button type="button" class="btn btn-secondary" (click)="prettifyBody()">Prettify JSON</button></div>
+          <textarea class="input mono" id="initialBody" name="initialBody" rows="8" [(ngModel)]="endpointForm.body" (ngModelChange)="onBodyChange()" placeholder="JSON ou texte brut"></textarea>
+          @if (bodyJsonError()) { <small class="json-error">{{ bodyJsonError() }}</small> }
+        </div>
+        }
+      }
+      @if (editingId() === null && formStep() === 3) {
+        <div class="span-2 combined-section"><h2>Attentes du test</h2><p class="subtitle">Définissez les critères de réussite de cette requête.</p></div>
+        <div><label class="label" for="initialCodeAttendu">Code HTTP attendu</label><input class="input" id="initialCodeAttendu" name="initialCodeAttendu" type="number" [(ngModel)]="endpointForm.codeAttendu" /></div>
+        <div><label class="label" for="initialTempsMaxMs">Temps de réponse max (ms)</label><input class="input" id="initialTempsMaxMs" name="initialTempsMaxMs" type="number" [(ngModel)]="endpointForm.tempsMaxMs" /></div>
+      }
+    </div>
+
+    <datalist id="commonHeaders">
+      <option value="Content-Type"></option>
+      <option value="Accept"></option>
+      <option value="Authorization"></option>
+    </datalist>
+
+    @if (error()) { 
+      <div class="error-banner">{{ error() }}</div> 
+    }
+
+    <div class="form-actions">
+      @if (editingId() === null && formStep() > 1) {
+        <button class="btn btn-secondary" type="button" (click)="goToStep(formStep() === 3 ? 2 : 1)">Précédent</button>
+      }
+      @if (editingId() === null && formStep() < 3) {
+        @if (formStep() === 1) {
+          <button class="btn btn-secondary" type="submit" [disabled]="saving()">Enregistrer la cible seule</button>
+        }
+        <button class="btn btn-primary" type="button" (click)="goToStep(formStep() === 1 ? 2 : 3)">Continuer</button>
+      } @else {
+      <button class="btn btn-primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement…' : editingId() === null ? 'Enregistrer la cible et l’endpoint' : 'Enregistrer la cible' }}
+      </button>
+      }
+    </div>
+  </form>
+}
+
+<section class="targets-section" aria-labelledby="targets-title">
+  <div class="section-header">
+    <div>
+      <h2 id="targets-title">Cibles API</h2>
+      <p class="subtitle">Sélectionnez une cible pour gérer ses endpoints.</p>
+    </div>
+  </div>
+  <div class="target-grid">
+    @for (target of targets(); track target.id) {
+      <article class="target-card" [class.selected]="selectedTargetId() === target.id">
+        <div class="target-card-header">
+          <h3>{{ target.nom }}</h3>
+          <span class="auth-badge" [class.auth-bearer]="target.authType === 'BEARER'" [class.auth-api-key]="target.authType === 'API_KEY'" [class.auth-oauth]="target.authType === 'OAUTH2'">{{ target.authType || 'NONE' }}</span>
+        </div>
+        <code class="target-url">{{ target.urlBase }}</code>
+        <div class="target-card-actions">
+          <button class="btn btn-primary" type="button" (click)="selectTarget(target)">Gérer les Endpoints</button>
+          <button class="action-btn action-btn-edit" type="button" (click)="editTarget(target)">Modifier</button>
+          <button class="action-btn action-btn-delete" type="button" (click)="deleteTarget(target)">Supprimer</button>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state">Aucune cible configurée. Créez une nouvelle cible pour commencer.</div>
+    }
+  </div>
+</section>
+
+@if (selectedTargetId()) {
+  <div class="section-header">
+    <div>
+      <h2>Endpoints pour : {{ selectedTargetName() }}</h2>
+      <p class="subtitle">Ajoutez ou modifiez des endpoints et indiquez la méthode HTTP.</p>
+    </div>
+    <button class="btn btn-secondary" (click)="showEndpointForm.set(!showEndpointForm())">
+      {{ showEndpointForm() ? 'Annuler' : '+ Ajouter un Endpoint' }}
+    </button>
+  </div>
+
+  @if (showEndpointForm()) {
+    <form class="card form-card" (ngSubmit)="submitEndpoint()">
+      <div class="form-grid">
+        <div>
+          <label class="label" for="endpointNom">Nom de l'endpoint</label>
+          <input class="input" id="endpointNom" name="endpointNom" [(ngModel)]="endpointForm.nom" required placeholder="Ex. Vérification solde" />
+        </div>
+
+        <div>
+          <label class="label" for="methode">Méthode HTTP</label>
+          <select class="input" id="methode" name="methode" [(ngModel)]="endpointForm.methode">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+        </div>
+
+        <div class="span-2">
+          <label class="label" for="chemin">Chemin (Path)</label>
+          <input class="input mono" id="chemin" name="chemin" [(ngModel)]="endpointForm.chemin" required placeholder="Ex. /api/v1/clients/solde" />
+        </div>
+
+        <div>
+          <label class="label" for="authInfo">Authentification</label>
+          <input class="input" id="authInfo" name="authInfo" [value]="selectedTargetAuthType()" disabled />
+        </div>
+
+
+        <div class="span-2">
+          <label class="label">En-têtes (Headers)</label>
+          <div class="kv-list">
+            <div *ngFor="let h of endpointHeaders; let i = index" class="kv-row">
+              <input class="input kv-key" [(ngModel)]="endpointHeaders[i].key" (ngModelChange)="onHeaderChange()" name="h_key_{{i}}" placeholder="Header name (Ex. Content-Type)" />
+              <input class="input kv-val mono" [(ngModel)]="endpointHeaders[i].value" (ngModelChange)="onHeaderChange()" name="h_val_{{i}}" placeholder="Header value" />
+              <button type="button" class="btn btn-link" (click)="removeHeader(i)">Supprimer</button>
+            </div>
+            <div class="kv-add">
+              <button type="button" class="btn btn-secondary" (click)="addHeader()">+ Ajouter un header</button>
+            </div>
+           
+          </div>
+        </div>
+
+        <div class="span-2">
+          <label class="label">Paramètres d'URL (Query Params)</label>
+          <div class="kv-list">
+            <div *ngFor="let p of endpointParams; let i = index" class="kv-row">
+              <input class="input kv-key" [(ngModel)]="endpointParams[i].key" (ngModelChange)="onParamChange()" name="p_key_{{i}}" placeholder="Param name" />
+              <input class="input kv-val" [(ngModel)]="endpointParams[i].value" (ngModelChange)="onParamChange()" name="p_val_{{i}}" placeholder="Param value" />
+              <button type="button" class="btn btn-link" (click)="removeParam(i)">Supprimer</button>
+            </div>
+            <div class="kv-add">
+              <button type="button" class="btn btn-secondary" (click)="addParam()">+ Ajouter un paramètre</button>
+            </div>
+            <div class="kv-fallback">
+              <small>Ou coller la query string:</small>
+              <input class="input mono" [(ngModel)]="endpointForm.params" (ngModelChange)="syncParamsFromInput($event)" name="params_input" placeholder="page=1&limit=10" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="label" for="contentType">Content-Type</label>
+          <select class="input" id="contentType" name="contentType" [(ngModel)]="endpointForm.contentType">
+            <option value="application/json">application/json</option>
+            <option value="multipart/form-data">multipart/form-data</option>
+            <option value="text/plain">text/plain</option>
+          </select>
+        </div>
+
+        <div class="span-2">
+          <label class="label" for="body">Body (Corps de la requête)</label>
+          <textarea class="input mono" id="body" name="body" rows="4" [(ngModel)]="endpointForm.body" [disabled]="endpointForm.methode === 'GET'" placeholder='Ex. { "compteSource": "ACC-001", "montant": 150.0 }'></textarea>
+          @if (endpointForm.methode === 'GET') {
+            <small>Le body est désactivé pour les requêtes GET.</small>
+          }
+        </div>
+
+        <div>
+          <label class="label" for="codeAttendu">Code HTTP attendu</label>
+          <input class="input" id="codeAttendu" name="codeAttendu" type="number" [(ngModel)]="endpointForm.codeAttendu" />
+        </div>
+
+        <div>
+          <label class="label" for="tempsMaxMs">Temps de réponse max (ms)</label>
+          <input class="input" id="tempsMaxMs" name="tempsMaxMs" type="number" [(ngModel)]="endpointForm.tempsMaxMs" />
+        </div>
+      </div>
+
+      @if (endpointError()) {
+        <div class="error-banner">{{ endpointError() }}</div>
+      }
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="endpointSaving()">
+          {{ endpointSaving() ? 'Enregistrement…' : endpointEditingId() !== null ? 'Enregistrer le endpoint' : 'Ajouter le endpoint' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Méthode</th>
+          <th>Statut</th>
+          <th>Chemin</th>
+          <th>Temps max</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (endpoint of endpoints(); track endpoint.id) {
+          <tr>
+            <td>{{ endpoint.nom }}</td>
+            <td><span class="method-badge" [class.method-get]="endpoint.methode === 'GET'" [class.method-post]="endpoint.methode === 'POST'" [class.method-put]="endpoint.methode === 'PUT'" [class.method-delete]="endpoint.methode === 'DELETE'">{{ endpoint.methode }}</span></td>
+            <td>
+              @if (isEndpointPinging(endpoint)) {
+                <span class="status-pill status-loading"><span class="spinner" aria-hidden="true"></span> Ping en cours</span>
+              } @else {
+                <span class="status-pill" [class.status-up]="endpoint.status === true" [class.status-down]="endpoint.status === false" [class.status-unknown]="endpoint.status === undefined || endpoint.status === null">
+                  {{ endpoint.status === true ? 'Actif' : endpoint.status === false ? 'Inactif' : 'Inconnu' }}
+                </span>
+              }
+            </td>
+            <td><code class="mono">{{ endpoint.chemin }}</code></td>
+            <td>{{ endpoint.tempsMaxMs ?? '–' }}</td>
+            <td class="text-right actions-cell">
+              <button class="action-btn action-btn-ping" type="button" [disabled]="isEndpointPinging(endpoint)" (click)="pingEndpoint(endpoint)">
+                <span class="action-icon">⟳</span>
+                <span class="action-label">Ping</span>
+              </button>
+              <button class="action-btn action-btn-edit" title="Modifier" (click)="editEndpoint(endpoint)">
+                <span class="action-icon">✏️</span>
+                <span class="action-label">Modifier</span>
+              </button>
+              <button class="action-btn action-btn-delete" title="Supprimer" (click)="deleteEndpoint(endpoint)">
+                <span class="action-icon">🗑️</span>
+                <span class="action-label">Supprimer</span>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">Aucun endpoint configuré pour cette cible.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (!selectedTargetId()) {
+  <section class="endpoints-empty-state">
+    <h2>Endpoints</h2>
+    <p>Cliquez sur une cible pour afficher et gérer ses endpoints.</p>
+  </section>
+}
+
+<!-- Tableau des cibles conservé pour compatibilité, remplacé visuellement par les cartes. -->
+<div class="card legacy-targets-table">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>URL de base</th>
+        <th>Auth</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of targets(); track t.id) {
+        <tr>
+          <td><strong>{{ t.nom }}</strong></td>
+          <td><code class="mono">{{ t.urlBase }}</code></td>
+          <td><span class="badge">{{ t.authType || 'NONE' }}</span></td>
+          <td>
+            <span class="status-chip" [class]="t.actif !== false ? 's2xx' : 's4xx'">
+              {{ t.actif !== false ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="text-right actions-cell">
+            <button class="action-btn action-btn-secondary" title="Endpoints" (click)="selectTarget(t)">
+              <span class="action-icon">🔗</span>
+              <span class="action-label">Endpoints</span>
+            </button>
+            <button class="action-btn action-btn-edit" title="Modifier" (click)="editTarget(t)">
+              <span class="action-icon">✏️</span>
+              <span class="action-label">Modifier</span>
+            </button>
+            <button class="action-btn action-btn-delete" title="Supprimer" (click)="deleteTarget(t)">
+              <span class="action-icon">🗑️</span>
+              <span class="action-label">Supprimer</span>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="empty">Aucune cible configurée pour le moment.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
