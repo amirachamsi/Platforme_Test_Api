@@ -43,4 +43,20 @@ public class TestCase {
 
     @Column(name = "timeout_ms")
     private Integer timeoutMs;
+
+    private String expectedCode;
+
+    private String JSONBody;
+
+    private String Assertions;
+
+    // Nombre d'utilisateurs virtuels (VUs) à utiliser lors de l'exécution k6.
+    @Column(name = "vus")
+    @Builder.Default
+    private Integer vus = 1;
+
+    // Durée du test k6 en secondes.
+    @Column(name = "duree_sec")
+    @Builder.Default
+    private Integer dureeSec = 10;
 }

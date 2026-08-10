@@ -26,7 +26,7 @@ public class EndpointService {
     private final EndpointRepository apiEndpointRepository;
     private final ApiTargetRepository apiTargetRepository;
     private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
+            .connectTimeout(Duration.ofSeconds(10))
             .build();
 
     @Transactional(readOnly = true)

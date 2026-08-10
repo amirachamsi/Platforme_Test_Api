@@ -1,10 +1,9 @@
 package com.bct.back.controllers;
 
 import com.bct.back.entities.Execution;
+import com.bct.back.repositories.ExecutionRepository;
 import com.bct.back.services.ExecutionService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,39 +15,24 @@ import java.util.List;
 public class ExecutionController {
 
     private final ExecutionService executionService;
+    private final ExecutionRepository executionRepository;
 
-    @GetMapping
-    public List<Execution> findAll(@RequestParam(required = false) Long testcaseId) {
-        if (testcaseId != null) {
-            return executionService.findByTestcaseId(testcaseId);
-        }
-        return executionService.findAll();
+    // Blocking: runs k6 synchronously and returns once the result is saved.
+    @PostMapping("/testcase/{testCaseId}")
+    public Execution execute(@PathVariable Long testCaseId) {
+        return executionService.execute(testCaseId);
     }
 
-    @GetMapping("/testcase/{testcaseId}")
-    public List<Execution> findByTestcase(@PathVariable Long testcaseId) {
-        return executionService.findByTestcaseId(testcaseId);
+    // 200 + body if a result exists, 204 (no body) if this TestCase has never been run.
+    @GetMapping("/testcase/{testCaseId}/latest")
+    public ResponseEntity<Execution> latest(@PathVariable Long testCaseId) {
+        return executionRepository.findFirstByTestcaseIdOrderByDateDebutDesc(testCaseId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-    @GetMapping("/{id}")
-    public Execution findById(@PathVariable Long id) {
-        return executionService.findById(id);
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Execution create(@Valid @RequestBody Execution execution) {
-        return executionService.create(execution);
-    }
-
-    @PutMapping("/{id}")
-    public Execution update(@PathVariable Long id, @Valid @RequestBody Execution execution) {
-        return executionService.update(id, execution);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        executionService.delete(id);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/testcase/{testCaseId}")
+    public List<Execution> history(@PathVariable Long testCaseId) {
+        return executionRepository.findByTestcaseIdOrderByDateDebutDesc(testCaseId);
     }
 }

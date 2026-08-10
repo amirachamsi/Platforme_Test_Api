@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Execution } from '../models/models';
 
@@ -9,28 +9,17 @@ export class ExecutionService {
 
   constructor(private http: HttpClient) {}
 
-  list(testcaseId?: number): Observable<Execution[]> {
-    const params = testcaseId != null ? new HttpParams().set('testcaseId', testcaseId.toString()) : undefined;
-    return this.http.get<Execution[]>(this.baseUrl, { params });
+  /** Blocking call — resolves once k6 has finished running and the result is saved. */
+  execute(testCaseId: number): Observable<Execution> {
+    return this.http.post<Execution>(`${this.baseUrl}/testcase/${testCaseId}`, {});
   }
 
-  getById(id: number): Observable<Execution> {
-    return this.http.get<Execution>(`${this.baseUrl}/${id}`);
+  /** Backend returns 204 (no body) if this TestCase has never been run; Angular resolves that as null. */
+  getLatest(testCaseId: number): Observable<Execution | null> {
+    return this.http.get<Execution | null>(`${this.baseUrl}/testcase/${testCaseId}/latest`);
   }
 
-  getByTestcase(testcaseId: number): Observable<Execution[]> {
-    return this.http.get<Execution[]>(`${this.baseUrl}/testcase/${testcaseId}`);
-  }
-
-  create(execution: Execution): Observable<Execution> {
-    return this.http.post<Execution>(this.baseUrl, execution);
-  }
-
-  update(id: number, execution: Execution): Observable<Execution> {
-    return this.http.put<Execution>(`${this.baseUrl}/${id}`, execution);
-  }
-
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  getHistory(testCaseId: number): Observable<Execution[]> {
+    return this.http.get<Execution[]>(`${this.baseUrl}/testcase/${testCaseId}`);
   }
 }

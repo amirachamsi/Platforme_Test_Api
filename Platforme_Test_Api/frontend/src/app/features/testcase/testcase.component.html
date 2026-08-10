@@ -37,25 +37,38 @@
       </div>
 
       <div>
-        <label class="label" for="codeAttendu">Code attendu</label>
-        <input class="input" id="codeAttendu" name="codeAttendu" type="number" [(ngModel)]="form.codeAttendu" />
+        <label class="label" for="expectedCode">Code attendu</label>
+        <input class="input" id="expectedCode" name="expectedCode" [(ngModel)]="form.expectedCode" placeholder="Ex. 200" />
       </div>
 
       <div>
-        <label class="label" for="seuilMs">Seuil max (ms)</label>
+        <label class="label" for="seuilMs">Seuil de temps de réponse max (ms)</label>
         <input class="input" id="seuilMs" name="seuilMs" type="number" [(ngModel)]="form.seuilMs" />
       </div>
 
       <div>
-        <label class="label" for="vus">Utilisateurs simultanés (VUs)</label>
-        <input class="input" type="number" id="vus" name="vus" [(ngModel)]="form.vus" placeholder="Ex. 10" />
+        <label class="label" for="tauxErreurMax">Taux d’erreur max (%)</label>
+        <input class="input" id="tauxErreurMax" name="tauxErreurMax" type="number" step="0.1" [(ngModel)]="form.tauxErreurMax" />
       </div>
 
-    
+      <div>
+        <label class="label" for="timeoutMs">Timeout (ms)</label>
+        <input class="input" id="timeoutMs" name="timeoutMs" type="number" [(ngModel)]="form.timeoutMs" />
+      </div>
+
+      <div>
+        <label class="label" for="vus">Utilisateurs simultanés (VUs)</label>
+        <input class="input" id="vus" name="vus" type="number" min="1" [(ngModel)]="form.vus" placeholder="Ex. 10" />
+      </div>
+
+      <div>
+        <label class="label" for="dureeSec">Durée du test (secondes)</label>
+        <input class="input" id="dureeSec" name="dureeSec" type="number" min="1" [(ngModel)]="form.dureeSec" placeholder="Ex. 10" />
+      </div>
 
       <div class="span-2">
-        <label class="label" for="donnees">Payload / Corps de la requête (JSON)</label>
-        <textarea class="input mono" id="donnees" name="donnees" rows="4" [(ngModel)]="form.donnees" placeholder='{
+        <label class="label" for="jsonBody">Payload / Corps de la requête (JSON)</label>
+        <textarea class="input mono" id="jsonBody" name="jsonBody" rows="4" [(ngModel)]="form.jsonBody" placeholder='{
   "compteSource": "ACC-001",
   "montant": 150.0
 }'></textarea>
@@ -73,9 +86,13 @@
   </form>
 }
 
+@if (runError()) {
+  <div class="card run-error">{{ runError() }}</div>
+}
+
 <div class="scenario-list">
   @for (scenario of scenarios(); track scenario.id) {
-    <div class="card scenario-card">
+    <div class="card scenario-card" (click)="openDetails(scenario)">
       <div class="scenario-main">
         <div class="scenario-title-row">
           <strong>{{ scenario.nom }}</strong>
@@ -83,9 +100,12 @@
         </div>
         <p class="scenario-desc">{{ scenario.endpoint }}</p>
         <div class="scenario-meta">
-          <span>Code attendu : {{ scenario.codeAttendu }}</span>
+          <span>Code attendu : {{ scenario.expectedCode }}</span>
           <span>Seuil : {{ scenario.seuilMs }} ms</span>
-          <span>VUs : {{ scenario.vus ?? 0 }}</span>
+          <span>Taux d’erreur max : {{ scenario.tauxErreurMax ?? 0 }}%</span>
+          <span>Timeout : {{ scenario.timeoutMs ?? 0 }} ms</span>
+          <span>VUs : {{ scenario.vus ?? 1 }}</span>
+          <span>Durée : {{ scenario.dureeSec ?? 10 }}s</span>
         </div>
         <p class="scenario-assertions">{{ scenario.assertions }}</p>
         @if (runningId() === scenario.id) {
@@ -101,15 +121,15 @@
         }
       </div>
       <div class="scenario-actions">
-        <button class="action-btn action-btn-run" (click)="runScenario(scenario)" [disabled]="runningId() === scenario.id">
+        <button class="action-btn action-btn-run" (click)="runScenario(scenario, $event)" [disabled]="runningId() === scenario.id">
           <span class="action-icon">▶️</span>
           <span class="action-label">{{ runningId() === scenario.id ? 'Exécution…' : 'Exécuter' }}</span>
         </button>
-        <button class="action-btn action-btn-edit" (click)="editScenario(scenario)">
+        <button class="action-btn action-btn-edit" (click)="editScenario(scenario); $event.stopPropagation()">
           <span class="action-icon">✏️</span>
           <span class="action-label">Modifier</span>
         </button>
-        <button class="action-btn action-btn-delete" (click)="deleteScenario(scenario)">
+        <button class="action-btn action-btn-delete" (click)="deleteScenario(scenario); $event.stopPropagation()">
           <span class="action-icon">🗑️</span>
           <span class="action-label">Supprimer</span>
         </button>
@@ -119,3 +139,124 @@
     <div class="card empty-state">Aucun scénario pour le moment. Créez-en un pour démarrer.</div>
   }
 </div>
+
+@if (showDetails()) {
+  <div class="overlay-backdrop" (click)="closeDetails()">
+    <div class="overlay-panel" (click)="$event.stopPropagation()">
+      <div class="overlay-header">
+        <h2>{{ selectedScenario()?.nom }}</h2>
+        <button class="overlay-close" (click)="closeDetails()">✕</button>
+      </div>
+
+      @if (detailsLoading()) {
+        <p class="overlay-loading">Chargement des résultats…</p>
+      } @else if (detailsError()) {
+        <p class="overlay-error">{{ detailsError() }}</p>
+      } @else if (!selectedExecution()) {
+        <p class="overlay-empty">Aucune exécution pour ce scénario pour le moment. Cliquez sur « Exécuter » pour lancer le premier test.</p>
+      } @else {
+        <div class="overlay-status"
+             [class.status-pass]="selectedExecution()!.statut === 'REUSSIE'"
+             [class.status-partial]="selectedExecution()!.statut === 'PARTIELLE'"
+             [class.status-fail]="selectedExecution()!.statut === 'ECHOUEE'">
+          {{ selectedExecution()!.statut ?? 'Statut inconnu' }}
+        </div>
+
+        <div class="overlay-hero">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 100 100" class="donut">
+              <circle class="donut-track" cx="50" cy="50" r="42"></circle>
+              <circle class="donut-fill" cx="50" cy="50" r="42"
+                [attr.stroke-dasharray]="donutCircumference"
+                [attr.stroke-dashoffset]="donutSuccessOffset"></circle>
+            </svg>
+            <div class="donut-center">
+              <strong>{{ executionSuccessPercent | number:'1.1-1' }}%</strong>
+              <span>réussite</span>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-row">
+              <span class="legend-dot legend-success"></span>
+              <span>Réussies</span>
+              <strong>{{ selectedExecution()!.reqReussies ?? 0 }}</strong>
+            </div>
+            <div class="legend-row">
+              <span class="legend-dot legend-fail"></span>
+              <span>Échouées</span>
+              <strong>{{ selectedExecution()!.reqEchouees ?? 0 }}</strong>
+            </div>
+            <div class="legend-row legend-total">
+              <span>Total</span>
+              <strong>{{ selectedExecution()!.reqTotal ?? 0 }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="gauge-row">
+          <div class="gauge">
+            <div class="gauge-label">
+              <span>Temps de réponse (P95) <span class="info-icon" data-tooltip="95% des requêtes ont répondu en dessous de cette durée. La barre montre à quel point on est proche du seuil configuré.">ⓘ</span></span>
+              <strong [class.over-limit]="p95OverLimit">{{ selectedExecution()!.p95MesureMs ?? '—' }} ms <span class="gauge-limit">/ {{ selectedScenario()?.seuilMs ?? '—' }} ms</span></strong>
+            </div>
+            <div class="gauge-track">
+              <div class="gauge-fill" [class.over-limit]="p95OverLimit" [style.width.%]="p95GaugePercent"></div>
+            </div>
+          </div>
+
+          <div class="gauge">
+            <div class="gauge-label">
+              <span>Taux d’erreur <span class="info-icon" data-tooltip="Pourcentage de requêtes en échec. La barre montre à quel point on est proche du seuil configuré.">ⓘ</span></span>
+              <strong [class.over-limit]="errorRateOverLimit">{{ selectedExecution()!.tauxErreurMesure != null ? (selectedExecution()!.tauxErreurMesure | number:'1.1-1') : '—' }}% <span class="gauge-limit">/ {{ selectedScenario()?.tauxErreurMax ?? '—' }}%</span></strong>
+            </div>
+            <div class="gauge-track">
+              <div class="gauge-fill" [class.over-limit]="errorRateOverLimit" [style.width.%]="errorRateGaugePercent"></div>
+            </div>
+          </div>
+        </div>
+
+        @if (observedStatusCodes.length > 0) {
+          <div class="status-codes-block">
+            <span class="status-codes-label">Codes de réponse observés</span>
+            <div class="status-codes-list">
+              @for (item of observedStatusCodes; track item.code) {
+                <span class="status-code-badge" [ngClass]="statusCodeClass(item.code)" [title]="item.code === '0' ? 'Aucune réponse HTTP reçue (timeout, DNS, connexion refusée, etc.)' : ''">
+                  {{ statusCodeLabel(item.code) }} <strong>× {{ item.count }}</strong>
+                </span>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="overlay-grid overlay-grid-secondary">
+          <div class="overlay-stat">
+            <span class="overlay-stat-label">RPS moyen <span class="info-icon" data-tooltip="Nombre moyen de requêtes envoyées par seconde pendant le test.">ⓘ</span></span>
+            <strong>{{ selectedExecution()!.rpsMoyen != null ? (selectedExecution()!.rpsMoyen | number:'1.1-1') : '—' }}</strong>
+          </div>
+          <div class="overlay-stat">
+            <span class="overlay-stat-label">VUs utilisés <span class="info-icon" data-tooltip="Nombre d’utilisateurs virtuels simulés simultanément pendant ce test.">ⓘ</span></span>
+            <strong>{{ selectedExecution()!.vus ?? '—' }}</strong>
+          </div>
+          <div class="overlay-stat">
+            <span class="overlay-stat-label">Durée du test <span class="info-icon" data-tooltip="Durée pendant laquelle k6 a envoyé du trafic lors de ce run.">ⓘ</span></span>
+            <strong>{{ selectedExecution()!.dureeSec ?? '—' }}s</strong>
+          </div>
+          <div class="overlay-stat">
+            <span class="overlay-stat-label">Démarré à</span>
+            <strong>{{ selectedExecution()!.dateDebut | date:'short' }}</strong>
+          </div>
+        </div>
+
+        <details class="overlay-raw">
+          <summary>
+            <span>Rapport k6 brut</span>
+            <button type="button" class="copy-btn" (click)="copyRawReport($event)">
+              {{ copyFeedback() ? copyFeedback() : 'Copier' }}
+            </button>
+          </summary>
+          <pre>{{ selectedExecution()!.rapportK6Json }}</pre>
+        </details>
+      }
+    </div>
+  </div>
+}
