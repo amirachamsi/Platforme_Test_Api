@@ -63,6 +63,12 @@ public class TestCaseService {
         if (payload.getDureeSec() != null) {
             existing.setDureeSec(payload.getDureeSec());
         }
+        if (payload.getExecutionMode() != null) {
+            existing.setExecutionMode(payload.getExecutionMode());
+        }
+        if (payload.getNombreRequetes() != null) {
+            existing.setNombreRequetes(payload.getNombreRequetes());
+        }
         if (payload.getEndpoint() != null && payload.getEndpoint().getId() != null) {
             existing.setEndpoint(resolveEndpoint(payload.getEndpoint()));
         }

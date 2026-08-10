@@ -1,6 +1,7 @@
 package com.bct.back.services;
 
 import com.bct.back.DTO.*;
+import com.bct.back.enums.ExecutionMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,12 @@ public class K6Runner {
     @Value("${k6.executable:k6}")
     private String k6Executable;
 
+    // Only used in REQUETES mode, where we don't know the real duration up front
+    // (unlike DUREE mode, which just waits durationSeconds + 60s). Bump this if
+    // you expect very large request counts against a slow target.
+    @Value("${k6.max-wait-seconds-requetes:300}")
+    private long maxWaitSecondsForRequestCountMode;
+
     public K6RunOutput run(TestCaseSnapshot snapshot) throws IOException, InterruptedException {
         Path scriptPath = extractScript();
         Path summaryPath = Files.createTempFile("k6-summary-" + snapshot.testCaseId() + "-", ".json");
@@ -34,7 +41,6 @@ public class K6Runner {
                     "-e", "TARGET_URL=" + snapshot.url(),
                     "-e", "METHOD=" + snapshot.method(),
                     "-e", "VUS=" + snapshot.vus(),
-                    "-e", "DURATION=" + snapshot.durationSeconds() + "s",
                     "-e", "EXPECTED_STATUS=" + snapshot.expectedStatus(),
                     "-e", "TIMEOUT_MS=" + snapshot.timeoutMs(),
                     "-e", "THRESHOLD_MS=" + snapshot.thresholdMs(),
@@ -43,6 +49,16 @@ public class K6Runner {
                     "-e", "RESULT_PATH=" + summaryPath,
                     scriptPath.toString()
             ));
+
+            // Mutually exclusive: testcase-runner.js picks k6's "iterations" executor
+            // when ITERATIONS is set, otherwise its default "duration" executor.
+            if (snapshot.executionMode() == ExecutionMode.REQUETES) {
+                cmd.add("-e");
+                cmd.add("ITERATIONS=" + snapshot.requestCount());
+            } else {
+                cmd.add("-e");
+                cmd.add("DURATION=" + snapshot.durationSeconds() + "s");
+            }
 
             if (snapshot.body() != null && !snapshot.body().isBlank()) {
                 // Passed via a file rather than "-e BODY=...": Windows' process-argument
@@ -63,7 +79,12 @@ public class K6Runner {
                     .start();
 
             String stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            long waitLimitSeconds = snapshot.durationSeconds() + 60; // test duration + startup/teardown buffer
+            // DUREE: we know exactly how long the run should take. REQUETES: we don't
+            // (depends entirely on how fast the target responds), so fall back to a
+            // generous configurable cap instead.
+            long waitLimitSeconds = snapshot.executionMode() == ExecutionMode.DUREE
+                    ? snapshot.durationSeconds() + 60
+                    : maxWaitSecondsForRequestCountMode;
             boolean finished = process.waitFor(waitLimitSeconds, TimeUnit.SECONDS);
 
             if (!finished) {

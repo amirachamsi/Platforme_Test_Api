@@ -1,5 +1,6 @@
 package com.bct.back.entities;
 
+import com.bct.back.enums.ExecutionMode;
 import com.bct.back.enums.TestStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -65,6 +66,13 @@ public class Execution {
 
     @Column(name = "duree_sec")
     private Integer dureeSec;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "execution_mode")
+    private ExecutionMode executionMode;
+
+    @Column(name = "nombre_requetes")
+    private Integer nombreRequetes;
 
     // NB: plain TEXT plutôt que @Lob — @Lob sur un String déclenche un accès par
     // stream JDBC qui peut expirer une fois la session Hibernate fermée, ce qui a

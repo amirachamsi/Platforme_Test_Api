@@ -1,5 +1,7 @@
 package com.bct.back.DTO;
 
+import com.bct.back.enums.ExecutionMode;
+
 /**
  * Plain snapshot of everything K6Runner needs to run a test, resolved once
  * inside a short read-only transaction (see ExecutionService.buildSnapshot).
@@ -18,6 +20,8 @@ public record TestCaseSnapshot(
         int thresholdMs,
         double maxErrorRate, // ratio 0.0–1.0, e.g. 0.05 for 5%
         int vus,
-        int durationSeconds
+        ExecutionMode executionMode,
+        Integer durationSeconds,  // set when executionMode = DUREE, null otherwise
+        Integer requestCount      // set when executionMode = REQUETES, null otherwise
 ) {
 }

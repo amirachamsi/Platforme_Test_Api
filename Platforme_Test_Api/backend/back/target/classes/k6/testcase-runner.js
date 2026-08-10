@@ -19,6 +19,10 @@ const TIMEOUT_MS = parseInt(__ENV.TIMEOUT_MS || '5000', 10);
 const THRESHOLD_MS = parseInt(__ENV.THRESHOLD_MS || '1000', 10);
 const MAX_ERROR_RATE = parseFloat(__ENV.MAX_ERROR_RATE || '0.05');
 const VUS = parseInt(__ENV.VUS || '1', 10);
+// Mutually exclusive: if ITERATIONS is set, k6 uses the "shared-iterations"
+// executor (runs exactly that many requests total across VUS, however long it
+// takes). Otherwise it uses the default "duration" executor.
+const ITERATIONS = __ENV.ITERATIONS ? parseInt(__ENV.ITERATIONS, 10) : null;
 const DURATION = __ENV.DURATION || '10s';
 
 let HEADERS = { 'Content-Type': 'application/json' };
@@ -51,7 +55,7 @@ const PREVIEW_CHARS = 300;
 
 export const options = {
     vus: VUS,
-    duration: DURATION,
+    ...(ITERATIONS ? { iterations: ITERATIONS } : { duration: DURATION }),
     thresholds: {
         http_req_duration: [`p(95)<${THRESHOLD_MS}`],
         status_mismatch_rate: [`rate<${MAX_ERROR_RATE}`],

@@ -73,6 +73,8 @@ public class K6ResultParser {
                     .rpsMoyen(reqRate)
                     .vus(snapshot.vus())
                     .dureeSec(snapshot.durationSeconds())
+                    .executionMode(snapshot.executionMode())
+                    .nombreRequetes(snapshot.requestCount())
                     .rapportK6Json(rawJson)
                     .corpsReponsesJson(buildBodyVariantsJson(root, consoleOutput))
                     .build();
@@ -87,6 +89,8 @@ public class K6ResultParser {
                     .statut(TestStatus.ECHOUEE)
                     .vus(snapshot.vus())
                     .dureeSec(snapshot.durationSeconds())
+                    .executionMode(snapshot.executionMode())
+                    .nombreRequetes(snapshot.requestCount())
                     .rapportK6Json("Erreur d'analyse du rapport k6: " + e.getMessage() + "\n\nRapport brut:\n" + rawJson)
                     .build();
         }

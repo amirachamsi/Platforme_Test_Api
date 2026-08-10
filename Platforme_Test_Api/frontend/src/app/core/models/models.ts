@@ -1,5 +1,6 @@
 export type HttpMethodType = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type TestStatus =  'EN_ATTENTE' | 'EN_COURS' | 'REUSSIE' | 'PARTIELLE' | 'ECHOUEE' | 'INTERROMPUE';
+export type ExecutionMode = 'DUREE' | 'REQUETES';
 export type typeStatus = 'FONCTIONNEL' | 'PERFORMANCE' | 'SECURITE' | 'CHARGE';
 export type authType = 'NONE' | 'BEARER' | 'OAUTH2' | 'API_KEY';
 
@@ -43,7 +44,9 @@ export interface TestCase {
   JSONBody?: string;        // Corps de requête JSON — casse exacte requise par la sérialisation Jackson côté backend
   assertions?: string;      // Description des vérifications attendues
   vus?: number;             // Nombre d'utilisateurs virtuels simulés lors de l'exécution k6
-  dureeSec?: number;        // Durée du test k6 en secondes
+  dureeSec?: number;        // Durée du test k6 en secondes — utilisé si executionMode = DUREE
+  executionMode?: ExecutionMode; // DUREE (durée fixe) ou REQUETES (nombre de requêtes fixe)
+  nombreRequetes?: number;  // Nombre total de requêtes — utilisé si executionMode = REQUETES
 }
 
 // Le rapport généré par k6 et stocké après l'exécution.
@@ -62,7 +65,9 @@ export interface Execution {
   reqEchouees?: number;      // Requêtes en échec (mauvais code, timeout, erreur réseau)
   rpsMoyen?: number;         // Requêtes par seconde
   vus?: number;              // VUs réellement utilisés pour ce run
-  dureeSec?: number;         // Durée réellement utilisée pour ce run (secondes)
+  dureeSec?: number;         // Durée réellement utilisée pour ce run (secondes) — si mode DUREE
+  executionMode?: ExecutionMode;
+  nombreRequetes?: number;   // Nombre de requêtes réellement demandé pour ce run — si mode REQUETES
   rapportK6Json?: string;    // Rapport JSON brut produit par k6 (pour debug/détails)
   corpsReponsesJson?: string; // [{preview, count}] — corps de réponse distincts observés
 }

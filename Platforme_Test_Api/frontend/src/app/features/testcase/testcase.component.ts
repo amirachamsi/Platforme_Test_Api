@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { EndpointService } from '../../core/services/endpoint.service';
 import { TestcaseService } from '../../core/services/testcase.service';
 import { ExecutionService } from '../../core/services/execution.service';
-import { ApiEndpoint, TestCase, Execution, typeStatus } from '../../core/models/models';
+import { ApiEndpoint, TestCase, Execution, ExecutionMode, typeStatus } from '../../core/models/models';
 
 interface TestcaseItem {
   id: number;
@@ -20,6 +20,8 @@ interface TestcaseItem {
   assertions?: string;
   vus?: number;
   dureeSec?: number;
+  executionMode?: ExecutionMode;
+  nombreRequetes?: number;
 }
 
 @Component({
@@ -38,6 +40,8 @@ export class TestcaseComponent implements OnInit {
   runError = signal<string | null>(null);
   progress = signal(0);
   progressLabel = signal('');
+  progressIndeterminate = signal(false);
+  progressIsEstimate = signal(false);
   saving = signal(false);
   error = signal<string | null>(null);
 
@@ -85,6 +89,8 @@ export class TestcaseComponent implements OnInit {
       assertions: scenario.assertions ?? '',
       vus: scenario.vus ?? 1,
       dureeSec: scenario.dureeSec ?? 10,
+      executionMode: scenario.executionMode ?? 'DUREE',
+      nombreRequetes: scenario.nombreRequetes ?? 100,
     };
     this.showForm.set(true);
   }
@@ -113,6 +119,8 @@ export class TestcaseComponent implements OnInit {
       assertions: this.form.assertions,
       vus: Number(this.form.vus),
       dureeSec: Number(this.form.dureeSec),
+      executionMode: this.form.executionMode,
+      nombreRequetes: Number(this.form.nombreRequetes),
     };
     const request$ = this.editingId() === null
       ? this.testcaseService.create(payload)
@@ -140,17 +148,46 @@ export class TestcaseComponent implements OnInit {
 
   /**
    * Blocking: the HTTP call doesn't resolve until k6 finishes, so there's no
-   * real incremental progress from the server. Instead the bar is simulated
-   * client-side against the scenario's configured duration, capped just under
-   * 100% so it never falsely claims "done" before the response actually
-   * arrives, then snaps to 100% once it does.
+   * real incremental progress from the server. In DUREE mode the bar is
+   * simulated against the scenario's configured duration — a value we know
+   * for certain. In REQUETES mode we don't know the real duration up front
+   * (it depends on how fast the target responds), so we estimate it from the
+   * previous execution's measured throughput (nombreRequetes / rpsMoyen) and
+   * clearly label it as an estimate; with no prior execution to estimate
+   * from, the bar falls back to an indeterminate pulsing state instead of
+   * showing a made-up percentage.
    */
   runScenario(scenario: TestcaseItem, event?: Event): void {
     event?.stopPropagation();
     this.runningId.set(scenario.id);
     this.runError.set(null);
-    this.startProgressSimulation(scenario.dureeSec ?? 10);
 
+    if (scenario.executionMode === 'REQUETES') {
+      this.executionService.getLatest(scenario.id).subscribe({
+        next: (lastExecution) => {
+          const estimatedSeconds = this.estimateRequestModeDuration(scenario, lastExecution);
+          this.startProgressSimulation(estimatedSeconds, true);
+          this.launchExecution(scenario);
+        },
+        error: () => {
+          this.startProgressSimulation(null, true);
+          this.launchExecution(scenario);
+        },
+      });
+    } else {
+      this.startProgressSimulation(scenario.dureeSec ?? 10, false);
+      this.launchExecution(scenario);
+    }
+  }
+
+  private estimateRequestModeDuration(scenario: TestcaseItem, lastExecution: Execution | null): number | null {
+    const target = scenario.nombreRequetes ?? 0;
+    const previousRps = lastExecution?.rpsMoyen;
+    if (!target || !previousRps || previousRps <= 0) return null;
+    return target / previousRps;
+  }
+
+  private launchExecution(scenario: TestcaseItem): void {
     this.executionService.execute(scenario.id).subscribe({
       next: (execution) => {
         this.finishProgress(() => {
@@ -170,15 +207,34 @@ export class TestcaseComponent implements OnInit {
     });
   }
 
-  private startProgressSimulation(durationSec: number): void {
+  /**
+   * durationSec === null → indeterminate mode: no percentage, just an elapsed-time
+   * counter, since we have nothing to estimate against.
+   * isEstimate → durationSec is a guess (REQUETES mode from prior throughput), so
+   * the label says so explicitly rather than implying a known value.
+   */
+  private startProgressSimulation(durationSec: number | null, isEstimate: boolean): void {
     this.progress.set(0);
-    this.progressLabel.set('Initialisation du test…');
+    this.progressIsEstimate.set(isEstimate);
+    this.progressIndeterminate.set(durationSec === null);
+
+    const startedAt = Date.now();
+    this.clearProgressInterval();
+
+    if (durationSec === null) {
+      this.progressLabel.set('Test en cours… (durée non estimable)');
+      this.progressIntervalId = window.setInterval(() => {
+        const elapsedSec = Math.round((Date.now() - startedAt) / 1000);
+        this.progressLabel.set(`Test en cours depuis ${elapsedSec}s… (durée non estimable)`);
+      }, 1000);
+      return;
+    }
 
     const totalMs = durationSec * 1000;
-    const startedAt = Date.now();
     const maxSimulatedPct = 92; // reserve the last stretch for the real response
+    const suffix = isEstimate ? ' (estimation)' : '';
 
-    this.clearProgressInterval();
+    this.progressLabel.set('Initialisation du test…');
     this.progressIntervalId = window.setInterval(() => {
       const elapsed = Date.now() - startedAt;
       const ratio = Math.min(elapsed / totalMs, 1);
@@ -186,9 +242,9 @@ export class TestcaseComponent implements OnInit {
 
       if (elapsed < totalMs) {
         const remaining = Math.max(0, Math.ceil((totalMs - elapsed) / 1000));
-        this.progressLabel.set(`Test en cours… ~${remaining}s restantes`);
+        this.progressLabel.set(`Test en cours… ~${remaining}s restantes${suffix}`);
       } else {
-        this.progressLabel.set('Finalisation des résultats…');
+        this.progressLabel.set(`Finalisation des résultats…${suffix}`);
       }
     }, 250);
   }
@@ -196,6 +252,7 @@ export class TestcaseComponent implements OnInit {
   /** Snaps the bar to 100% briefly so the user sees completion, then runs the given callback. */
   private finishProgress(then: () => void): void {
     this.clearProgressInterval();
+    this.progressIndeterminate.set(false);
     this.progress.set(100);
     this.progressLabel.set('Terminé');
     window.setTimeout(then, 400);
@@ -367,6 +424,8 @@ export class TestcaseComponent implements OnInit {
       assertions: testCase.assertions,
       vus: testCase.vus ?? 1,
       dureeSec: testCase.dureeSec ?? 10,
+      executionMode: testCase.executionMode ?? 'DUREE',
+      nombreRequetes: testCase.nombreRequetes ?? 100,
     };
   }
 
@@ -388,6 +447,8 @@ export class TestcaseComponent implements OnInit {
       assertions: '',
       vus: 1,
       dureeSec: 10,
+      executionMode: 'DUREE' as ExecutionMode,
+      nombreRequetes: 100,
     };
   }
 

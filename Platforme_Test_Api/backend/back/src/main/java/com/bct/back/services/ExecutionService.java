@@ -6,6 +6,7 @@ import com.bct.back.entities.Endpoint;
 import com.bct.back.entities.Execution;
 import com.bct.back.entities.TestCase;
 import com.bct.back.enums.AuthType;
+import com.bct.back.enums.ExecutionMode;
 import com.bct.back.enums.KeyLocation;
 import com.bct.back.enums.TestStatus;
 import com.bct.back.repositories.ExecutionRepository;
@@ -53,6 +54,8 @@ public class ExecutionService {
                     .statut(TestStatus.ECHOUEE)
                     .vus(snapshot.vus())
                     .dureeSec(snapshot.durationSeconds())
+                    .executionMode(snapshot.executionMode())
+                    .nombreRequetes(snapshot.requestCount())
                     .rapportK6Json("Erreur d'exécution k6: " + e.getMessage())
                     .build();
         }
@@ -114,6 +117,8 @@ public class ExecutionService {
             headersJson = "{}";
         }
 
+        ExecutionMode mode = tc.getExecutionMode() != null ? tc.getExecutionMode() : ExecutionMode.DUREE;
+
         return new TestCaseSnapshot(
                 tc.getId(),
                 url,
@@ -125,7 +130,9 @@ public class ExecutionService {
                 tc.getSeuilMs() != null ? tc.getSeuilMs() : 1000,
                 tc.getTauxErreurMax() != null ? tc.getTauxErreurMax() / 100.0 : 0.05,
                 tc.getVus() != null ? tc.getVus() : 1,
-                tc.getDureeSec() != null ? tc.getDureeSec() : 10
+                mode,
+                mode == ExecutionMode.DUREE ? (tc.getDureeSec() != null ? tc.getDureeSec() : 10) : null,
+                mode == ExecutionMode.REQUETES ? (tc.getNombreRequetes() != null ? tc.getNombreRequetes() : 100) : null
         );
     }
 
