@@ -72,4 +72,11 @@ public class Execution {
     // to access lob stream). TEXT est lu comme une String normale, pas de stream.
     @Column(name = "rapport_k6_json", columnDefinition = "TEXT")
     private String rapportK6Json;
+
+    // JSON array of {"preview": string, "count": number} — distinct response
+    // bodies observed during this run and how many requests returned each,
+    // merged server-side from k6's checks (counts) + stdout (samples). See
+    // K6ResultParser.buildBodyVariants().
+    @Column(name = "corps_reponses_json", columnDefinition = "TEXT")
+    private String corpsReponsesJson;
 }

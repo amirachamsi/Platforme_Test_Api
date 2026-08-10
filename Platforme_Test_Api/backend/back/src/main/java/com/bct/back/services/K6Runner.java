@@ -1,6 +1,6 @@
 package com.bct.back.services;
 
-import com.bct.back.DTO.TestCaseSnapshot;
+import com.bct.back.DTO.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class K6Runner {
     @Value("${k6.executable:k6}")
     private String k6Executable;
 
-    public String run(TestCaseSnapshot snapshot) throws IOException, InterruptedException {
+    public K6RunOutput run(TestCaseSnapshot snapshot) throws IOException, InterruptedException {
         Path scriptPath = extractScript();
         Path summaryPath = Files.createTempFile("k6-summary-" + snapshot.testCaseId() + "-", ".json");
         Path bodyPath = null;
@@ -77,7 +77,7 @@ public class K6Runner {
 
             String json = Files.readString(summaryPath);
             Files.deleteIfExists(summaryPath);
-            return json;
+            return new K6RunOutput(json, stdout);
         } finally {
             if (bodyPath != null) {
                 Files.deleteIfExists(bodyPath);

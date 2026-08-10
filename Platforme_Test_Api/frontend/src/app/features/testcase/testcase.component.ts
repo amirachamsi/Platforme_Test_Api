@@ -333,6 +333,17 @@ export class TestcaseComponent implements OnInit {
     return 'status-code-other';
   }
 
+  /** Parses corpsReponsesJson, already merged/sorted server-side — see K6ResultParser. */
+  get responseBodyVariants(): { preview: string; count: number }[] {
+    const raw = this.selectedExecution()?.corpsReponsesJson;
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
   private loadTestCases(): void {
     this.testcaseService.list().subscribe({
       next: (testCases) => this.scenarios.set(testCases.map((testCase) => this.toScenario(testCase))),

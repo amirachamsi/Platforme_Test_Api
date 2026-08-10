@@ -228,6 +228,20 @@
           </div>
         }
 
+        @if (responseBodyVariants.length > 0) {
+          <div class="body-variants-block">
+            <span class="status-codes-label">Corps de réponse observés <span class="info-icon" data-tooltip="Regroupe les requêtes par contenu de réponse identique. Si l'API répond toujours la même chose, une seule entrée apparaît ici avec le nombre total.">ⓘ</span></span>
+            <div class="body-variants-list">
+              @for (variant of responseBodyVariants; track variant.preview) {
+                <div class="body-variant-row">
+                  <span class="body-variant-count">× {{ variant.count }}</span>
+                  <code class="body-variant-preview">{{ variant.preview }}</code>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <div class="overlay-grid overlay-grid-secondary">
           <div class="overlay-stat">
             <span class="overlay-stat-label">RPS moyen <span class="info-icon" data-tooltip="Nombre moyen de requêtes envoyées par seconde pendant le test.">ⓘ</span></span>

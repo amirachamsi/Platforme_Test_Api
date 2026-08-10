@@ -1,6 +1,7 @@
 import http from 'k6/http';
 import { check } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
+import crypto from 'k6/crypto';
 
 /**
  * Generic k6 runner driven entirely by environment variables, launched by
@@ -41,6 +42,12 @@ const BODY = __ENV.BODY_FILE ? open(__ENV.BODY_FILE) : (__ENV.BODY || null);
 // don't depend on it at all here).
 const statusMismatchRate = new Rate('status_mismatch_rate');
 const responseTimeTrend = new Trend('custom_response_time');
+
+// Per-VU set of body hashes already sample-logged to stdout — keeps output to
+// one line per distinct body variant this VU has seen, not one per request.
+const loggedBodyHashes = new Set();
+const MAX_HASH_INPUT_CHARS = 5000; // bound hashing cost for very large bodies
+const PREVIEW_CHARS = 300;
 
 export const options = {
     vus: VUS,
@@ -98,6 +105,22 @@ export default function () {
     // error_code reference table, e.g. 1211 = request timeout).
     if (res.status === 0) {
         checks[`network error (code ${res.error_code}): ${res.error || 'raison inconnue'}`] = () => true;
+    }
+
+    // Group/count distinct response bodies without storing every single one.
+    // Hash input is capped at MAX_HASH_INPUT_CHARS so a handful of very large
+    // responses can't slow the run down — two huge bodies differing only past
+    // that cutoff would be (rarely) grouped together, an accepted trade-off.
+    const bodyText = res.body || '';
+    const hashInput = bodyText.length > MAX_HASH_INPUT_CHARS ? bodyText.slice(0, MAX_HASH_INPUT_CHARS) : bodyText;
+    const bodyHash = crypto.sha256(hashInput, 'hex').slice(0, 12);
+    checks[`response body variant: ${bodyHash}`] = () => true;
+
+    if (!loggedBodyHashes.has(bodyHash)) {
+        loggedBodyHashes.add(bodyHash);
+        const preview = bodyText.slice(0, PREVIEW_CHARS).replace(/[\r\n]+/g, ' ⏎ ');
+        // Parsed back out of stdout by K6ResultParser.java — pipe-delimited, single line.
+        console.log(`BODY_SAMPLE|${bodyHash}|${preview}`);
     }
 
     check(res, checks);

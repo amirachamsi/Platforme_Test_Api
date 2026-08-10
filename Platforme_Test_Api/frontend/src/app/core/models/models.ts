@@ -64,6 +64,7 @@ export interface Execution {
   vus?: number;              // VUs réellement utilisés pour ce run
   dureeSec?: number;         // Durée réellement utilisée pour ce run (secondes)
   rapportK6Json?: string;    // Rapport JSON brut produit par k6 (pour debug/détails)
+  corpsReponsesJson?: string; // [{preview, count}] — corps de réponse distincts observés
 }
 
 export interface Campaign {

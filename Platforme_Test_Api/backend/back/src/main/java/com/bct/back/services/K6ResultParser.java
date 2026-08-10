@@ -8,13 +8,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class K6ResultParser {
 
+    private static final String BODY_VARIANT_PREFIX = "response body variant: ";
+    private static final String BODY_SAMPLE_LOG_PREFIX = "BODY_SAMPLE|";
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public Execution parse(String rawJson, TestCaseSnapshot snapshot, String correlationId, LocalDateTime start) {
+    public Execution parse(String rawJson, String consoleOutput, TestCaseSnapshot snapshot, String correlationId, LocalDateTime start) {
         try {
             JsonNode root = objectMapper.readTree(rawJson);
             JsonNode metrics = root.path("metrics");
@@ -67,6 +74,7 @@ public class K6ResultParser {
                     .vus(snapshot.vus())
                     .dureeSec(snapshot.durationSeconds())
                     .rapportK6Json(rawJson)
+                    .corpsReponsesJson(buildBodyVariantsJson(root, consoleOutput))
                     .build();
 
         } catch (Exception e) {
@@ -81,6 +89,58 @@ public class K6ResultParser {
                     .dureeSec(snapshot.durationSeconds())
                     .rapportK6Json("Erreur d'analyse du rapport k6: " + e.getMessage() + "\n\nRapport brut:\n" + rawJson)
                     .build();
+        }
+    }
+
+    /**
+     * Merges two sources into a [{preview, count}] JSON array:
+     *  - counts per distinct body hash, from root_group.checks (aggregated correctly
+     *    across all VUs by k6 itself — see "response body variant: <hash>" checks)
+     *  - a text sample per hash, from the BODY_SAMPLE lines testcase-runner.js logs
+     *    to stdout (one per distinct hash per VU)
+     * Returns null (not an empty array) if nothing was found, so the frontend can
+     * distinguish "no data" from "genuinely zero variants".
+     */
+    private String buildBodyVariantsJson(JsonNode root, String consoleOutput) {
+        try {
+            Map<String, Long> counts = new LinkedHashMap<>();
+            for (JsonNode check : root.path("root_group").path("checks")) {
+                String name = check.path("name").asText("");
+                if (name.startsWith(BODY_VARIANT_PREFIX)) {
+                    String hash = name.substring(BODY_VARIANT_PREFIX.length());
+                    counts.put(hash, check.path("passes").asLong(0));
+                }
+            }
+            if (counts.isEmpty()) {
+                return null;
+            }
+
+            Map<String, String> samples = new LinkedHashMap<>();
+            if (consoleOutput != null) {
+                for (String line : consoleOutput.split("\\R")) {
+                    if (!line.contains(BODY_SAMPLE_LOG_PREFIX)) continue;
+                    // console.log lines are prefixed by k6 with a timestamp/level, e.g.
+                    // "INFO[0002] BODY_SAMPLE|abc123|{...}" — find our marker anywhere in the line.
+                    int start = line.indexOf(BODY_SAMPLE_LOG_PREFIX) + BODY_SAMPLE_LOG_PREFIX.length();
+                    String[] parts = line.substring(start).split("\\|", 2);
+                    if (parts.length == 2) {
+                        samples.putIfAbsent(parts[0], parts[1]);
+                    }
+                }
+            }
+
+            List<Map<String, Object>> variants = new ArrayList<>();
+            for (Map.Entry<String, Long> entry : counts.entrySet()) {
+                Map<String, Object> variant = new LinkedHashMap<>();
+                variant.put("preview", samples.getOrDefault(entry.getKey(), "(aperçu indisponible)"));
+                variant.put("count", entry.getValue());
+                variants.add(variant);
+            }
+            variants.sort((a, b) -> Long.compare((Long) b.get("count"), (Long) a.get("count")));
+
+            return objectMapper.writeValueAsString(variants);
+        } catch (Exception e) {
+            return null;
         }
     }
 

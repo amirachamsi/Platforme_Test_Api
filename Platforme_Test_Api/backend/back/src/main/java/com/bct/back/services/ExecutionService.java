@@ -1,6 +1,6 @@
 package com.bct.back.services;
 
-import com.bct.back.DTO.TestCaseSnapshot;
+import com.bct.back.DTO.*;
 import com.bct.back.entities.ApiTarget;
 import com.bct.back.entities.Endpoint;
 import com.bct.back.entities.Execution;
@@ -43,8 +43,8 @@ public class ExecutionService {
 
         Execution execution;
         try {
-            String rawSummary = k6Runner.run(snapshot);
-            execution = k6ResultParser.parse(rawSummary, snapshot, correlationId, start);
+            K6RunOutput output = k6Runner.run(snapshot);
+            execution = k6ResultParser.parse(output.summaryJson(), output.consoleOutput(), snapshot, correlationId, start);
         } catch (Exception e) {
             execution = Execution.builder()
                     .correlationId(correlationId)
