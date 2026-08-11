@@ -72,11 +72,28 @@ export interface Execution {
   corpsReponsesJson?: string; // [{preview, count}] — corps de réponse distincts observés
 }
 
+export type CampaignMode = 'PARALLELE' | 'SEQUENTIELLE';
+
+export interface CampaignTestCaseRef {
+  id?: number;
+  ordre: number;
+  testcase: TestCase;
+}
+
 export interface Campaign {
   id?: number;
   nom: string;
   description?: string;
-  testcase?: TestCase[];
-  configurationCharge?: string;
-  statut?: TestStatus;
+  mode?: CampaignMode;
+  lastLaunchedAt?: string;
+  testCases?: CampaignTestCaseRef[];
+}
+
+// Sent on create/update — a flat ordered list of testcase ids rather than the
+// full nested shape the GET responses return.
+export interface CampaignRequest {
+  nom: string;
+  description?: string;
+  mode: CampaignMode;
+  testCaseIds: number[];
 }

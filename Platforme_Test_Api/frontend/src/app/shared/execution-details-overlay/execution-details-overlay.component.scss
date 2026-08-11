@@ -1,0 +1,407 @@
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 36, 71, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.overlay-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(13, 36, 71, 0.25);
+}
+
+.overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.overlay-header h2 { font-size: 18px; margin: 0; }
+
+.overlay-close {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--bct-ink-soft);
+  padding: 4px 8px;
+}
+
+.overlay-loading,
+.overlay-error,
+.overlay-empty {
+  color: var(--bct-ink-soft);
+  font-size: 14px;
+  padding: 12px 0;
+}
+.overlay-error { color: var(--bct-danger); }
+
+.overlay-status {
+  display: inline-flex;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+  background: rgba(13, 36, 71, 0.08);
+  color: var(--bct-navy);
+}
+.overlay-status.status-pass { background: rgba(30, 166, 114, 0.14); color: #0f7a4a; }
+.overlay-status.status-partial { background: rgba(217, 155, 21, 0.14); color: #a06a0a; }
+.overlay-status.status-fail { background: rgba(212, 63, 63, 0.12); color: var(--bct-danger); }
+
+.overlay-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.overlay-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.overlay-stat-label { font-size: 11px; color: var(--bct-ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+.overlay-stat strong { font-size: 16px; color: var(--bct-navy); }
+.overlay-stat-success strong { color: #0f7a4a; }
+.overlay-stat-fail strong { color: var(--bct-danger); }
+
+.info-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  color: var(--bct-ink-soft);
+  opacity: 0.75;
+  font-size: 15px;
+  margin-left: 3px;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+.info-icon:hover { opacity: 1; color: var(--bct-navy); }
+
+/* Custom tooltip, built from the data-tooltip attribute instead of the native title one */
+.info-icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bct-navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 8px 20px rgba(13, 36, 71, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 10;
+}
+/* Little arrow under the tooltip, pointing at the icon */
+.info-icon::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent;
+  border-top-color: var(--bct-navy);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 10;
+}
+.info-icon:hover::after,
+.info-icon:hover::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Left column: anchor tooltip to the icon's left edge so it opens rightward
+   instead of centering (which pushed it past the overlay panel's left edge). */
+.overlay-grid .overlay-stat:nth-child(odd) .info-icon::after {
+  left: 0;
+  transform: translateX(0) translateY(4px);
+}
+.overlay-grid .overlay-stat:nth-child(odd) .info-icon::before {
+  left: 8px;
+  transform: translateX(0) translateY(4px);
+}
+.overlay-grid .overlay-stat:nth-child(odd) .info-icon:hover::after,
+.overlay-grid .overlay-stat:nth-child(odd) .info-icon:hover::before {
+  transform: translateX(0) translateY(0);
+}
+
+/* Right column: anchor to the icon's right edge so it opens leftward instead,
+   avoiding the same problem on the panel's right edge. */
+.overlay-grid .overlay-stat:nth-child(even) .info-icon::after {
+  left: auto;
+  right: 0;
+  transform: translateX(0) translateY(4px);
+}
+.overlay-grid .overlay-stat:nth-child(even) .info-icon::before {
+  left: auto;
+  right: 8px;
+  transform: translateX(0) translateY(4px);
+}
+.overlay-grid .overlay-stat:nth-child(even) .info-icon:hover::after,
+.overlay-grid .overlay-stat:nth-child(even) .info-icon:hover::before {
+  transform: translateX(0) translateY(0);
+}
+
+/* --- Success/fail donut --- */
+.overlay-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 4px 20px;
+  border-bottom: 1px solid rgba(13, 36, 71, 0.08);
+  margin-bottom: 18px;
+}
+
+.donut-wrap {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  flex-shrink: 0;
+}
+.donut {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.donut-track {
+  fill: none;
+  stroke: var(--bct-danger);
+  stroke-width: 10;
+  opacity: 0.85;
+}
+.donut-fill {
+  fill: none;
+  stroke: #1ea672;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.donut-center strong { font-size: 20px; color: var(--bct-navy); line-height: 1; }
+.donut-center span { font-size: 10px; color: var(--bct-ink-soft); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--bct-ink-soft);
+}
+.legend-row strong { margin-left: auto; color: var(--bct-navy); font-size: 14px; }
+.legend-total { padding-top: 6px; border-top: 1px dashed rgba(13, 36, 71, 0.12); font-weight: 600; }
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-success { background: #1ea672; }
+.legend-fail { background: var(--bct-danger); }
+
+/* --- Threshold gauges --- */
+.gauge-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.gauge-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--bct-ink-soft);
+  margin-bottom: 6px;
+}
+.gauge-label strong {
+  color: var(--bct-navy);
+  font-size: 13px;
+  font-weight: 600;
+}
+.gauge-label strong.over-limit { color: var(--bct-danger); }
+
+/* Gauge icons sit near the left edge of the panel — anchor rightward like the
+   left-column overlay-grid icons, instead of centering (which clipped). */
+.gauge-label .info-icon::after {
+  left: 0;
+  transform: translateX(0) translateY(4px);
+}
+.gauge-label .info-icon::before {
+  left: 8px;
+  transform: translateX(0) translateY(4px);
+}
+.gauge-label .info-icon:hover::after,
+.gauge-label .info-icon:hover::before {
+  transform: translateX(0) translateY(0);
+}
+.gauge-limit { font-weight: 400; color: var(--bct-ink-soft); }
+
+.gauge-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(13, 36, 71, 0.08);
+  overflow: hidden;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #1ea672;
+  transition: width 0.5s ease;
+}
+.gauge-fill.over-limit { background: var(--bct-danger); }
+
+.status-codes-block {
+  margin-bottom: 18px;
+}
+.status-codes-label {
+  display: block;
+  font-size: 11px;
+  color: var(--bct-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+.status-codes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.status-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.status-code-badge strong { font-weight: 700; }
+.status-code-2xx { background: rgba(30, 166, 114, 0.12); color: #0f7a4a; border-color: rgba(30, 166, 114, 0.25); }
+.status-code-3xx { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border-color: rgba(59, 130, 246, 0.25); }
+.status-code-4xx { background: rgba(217, 155, 21, 0.14); color: #a06a0a; border-color: rgba(217, 155, 21, 0.3); }
+.status-code-5xx { background: rgba(212, 63, 63, 0.12); color: var(--bct-danger); border-color: rgba(212, 63, 63, 0.25); }
+.status-code-other { background: rgba(13, 36, 71, 0.06); color: var(--bct-ink-soft); border-color: rgba(13, 36, 71, 0.12); }
+
+.body-variants-block {
+  margin-bottom: 18px;
+}
+.body-variants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.body-variant-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(13, 36, 71, 0.04);
+  border-radius: 8px;
+}
+.body-variant-count {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bct-navy);
+  background: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid rgba(13, 36, 71, 0.12);
+}
+.body-variant-preview {
+  font-size: 11px;
+  color: var(--bct-ink-soft);
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.overlay-grid-secondary {
+  opacity: 0.9;
+}
+.overlay-grid-secondary .overlay-stat strong { font-size: 14px; }
+
+.overlay-raw summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--bct-navy);
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.overlay-raw pre {
+  max-height: 260px;
+  overflow: auto;
+  background: rgba(13, 36, 71, 0.04);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copy-btn {
+  border: 1px solid rgba(13, 36, 71, 0.15);
+  background: #fff;
+  color: var(--bct-navy);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 64px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.copy-btn:hover {
+  background: rgba(13, 36, 71, 0.05);
+  border-color: rgba(13, 36, 71, 0.25);
+}
