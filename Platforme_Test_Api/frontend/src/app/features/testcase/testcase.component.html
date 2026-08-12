@@ -3,13 +3,17 @@
     <h1>Scénarios de test</h1>
     <p class="subtitle">Choisissez le type de test et l’endpoint à vérifier avant d’enregistrer votre scénario.</p>
   </div>
-  <button class="btn btn-primary" (click)="toggleForm()">
-    {{ showForm() ? 'Annuler' : 'Nouveau scénario' }}
-  </button>
+  <button class="btn btn-primary" (click)="openForm()">Nouveau scénario</button>
 </div>
 
 @if (showForm()) {
-  <form class="card form-card" (ngSubmit)="submit()">
+<div class="form-overlay-backdrop" (click)="closeForm()">
+  <div class="form-overlay-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ editingId() !== null ? 'Modifier le scénario' : 'Nouveau scénario' }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeForm()">✕</button>
+    </div>
+    <form (ngSubmit)="submit()">
     <div class="form-grid">
       <div class="span-2">
         <label class="label" for="nom">Nom du scénario</label>
@@ -98,7 +102,9 @@
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ editingId() !== null ? 'Enregistrer les modifications' : 'Enregistrer le scénario' }}</button>
     </div>
-  </form>
+    </form>
+  </div>
+</div>
 }
 
 @if (runError()) {

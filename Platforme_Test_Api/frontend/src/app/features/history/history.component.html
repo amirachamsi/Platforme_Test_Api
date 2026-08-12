@@ -11,23 +11,58 @@
   <button class="tab-btn" [class.active]="activeTab() === 'pings'" (click)="setTab('pings')">Pings</button>
 </div>
 
+<div class="controls-row">
+  <input class="input search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" [placeholder]="searchPlaceholder" />
+  <button type="button" class="sort-btn" (click)="toggleSortOrder()">
+    {{ sortAscending() ? '↑ Plus ancien d’abord' : '↓ Plus récent d’abord' }}
+  </button>
+</div>
+
 @if (activeTab() === 'campagnes') {
   @if (loadingCampaigns()) {
     <p class="loading-text">Chargement…</p>
-  } @else if (campaignLaunches().length === 0) {
-    <div class="card empty-state">Aucune campagne n'a encore été lancée.</div>
+  } @else if (filteredCampaignLaunches.length === 0) {
+    <div class="card empty-state">Aucune campagne trouvée.</div>
   } @else {
     <div class="history-list">
-      @for (launch of campaignLaunches(); track launch.id) {
+      @for (launch of filteredCampaignLaunches; track launch.id) {
         <div class="card history-row">
-          <div class="history-row-main">
-            <strong>{{ launch.campaign?.nom ?? 'Campagne supprimée' }}</strong>
-            <span class="mode-chip">{{ launch.mode === 'SEQUENTIELLE' ? 'En file' : 'En parallèle' }}</span>
+          <div class="history-row-clickable" (click)="toggleExpandLaunch(launch)">
+            <div class="history-row-main">
+              <strong>{{ launch.campaign?.nom ?? 'Campagne supprimée' }}</strong>
+              <span class="mode-chip">{{ launch.mode === 'SEQUENTIELLE' ? 'En file' : 'En parallèle' }}</span>
+            </div>
+            <div class="history-row-meta">
+              <span>{{ launch.testCaseCount ?? 0 }} scénario(s)</span>
+              <span>{{ launch.launchedAt | date:'short' }}</span>
+              @if (launch.campaign) {
+                <span class="expand-hint">{{ expandedLaunchId() === launch.id ? 'Masquer ▲' : 'Voir les scénarios ▼' }}</span>
+              }
+            </div>
           </div>
-          <div class="history-row-meta">
-            <span>{{ launch.testCaseCount ?? 0 }} scénario(s)</span>
-            <span>{{ launch.launchedAt | date:'short' }}</span>
-          </div>
+
+          @if (expandedLaunchId() === launch.id) {
+            <div class="expanded-campaign">
+              @if (expandedLoading()) {
+                <p class="loading-text">Chargement des scénarios…</p>
+              } @else if (!expandedCampaign()) {
+                <p class="loading-text">Impossible de charger cette campagne (peut-être supprimée depuis).</p>
+              } @else {
+                <p class="expanded-note">Scénarios actuels de la campagne — les résultats affichés sont les derniers connus, pas nécessairement ceux de ce lancement précis.</p>
+                @for (ref of orderedRefs(expandedCampaign()!); track ref.testcase.id) {
+                  <div class="campaign-testcase-row" (click)="openScenarioLatest(ref.testcase, $event)">
+                    <div class="campaign-testcase-header">
+                      @if (expandedCampaign()!.mode === 'SEQUENTIELLE') {
+                        <span class="selected-order">{{ ref.ordre + 1 }}</span>
+                      }
+                      <span class="campaign-testcase-name">{{ ref.testcase.nom }}</span>
+                      <span class="campaign-testcase-hint">Voir les résultats</span>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
         </div>
       }
     </div>
@@ -37,11 +72,11 @@
 @if (activeTab() === 'executions') {
   @if (loadingExecutions()) {
     <p class="loading-text">Chargement…</p>
-  } @else if (executions().length === 0) {
-    <div class="card empty-state">Aucune exécution pour le moment.</div>
+  } @else if (filteredExecutions.length === 0) {
+    <div class="card empty-state">Aucune exécution trouvée.</div>
   } @else {
     <div class="history-list">
-      @for (execution of executions(); track execution.id) {
+      @for (execution of filteredExecutions; track execution.id) {
         <div class="card history-row clickable" (click)="openExecutionOverlay(execution)">
           <div class="history-row-main">
             <strong>{{ execution.testcase?.nom ?? 'Scénario supprimé' }}</strong>
@@ -67,11 +102,11 @@
 @if (activeTab() === 'pings') {
   @if (loadingPings()) {
     <p class="loading-text">Chargement…</p>
-  } @else if (pings().length === 0) {
-    <div class="card empty-state">Aucun ping pour le moment.</div>
+  } @else if (filteredPings.length === 0) {
+    <div class="card empty-state">Aucun ping trouvé.</div>
   } @else {
     <div class="history-list">
-      @for (ping of pings(); track ping.id) {
+      @for (ping of filteredPings; track ping.id) {
         <div class="card history-row">
           <div class="history-row-main">
             <strong>{{ ping.endpoint?.nom ?? 'Endpoint supprimé' }}</strong>
@@ -82,6 +117,9 @@
           <div class="history-row-meta">
             @if (ping.endpoint) {
               <span>{{ ping.endpoint.methode }} {{ ping.endpoint.chemin }}</span>
+            }
+            @if ($any(ping.endpoint?.target)?.nom) {
+              <span class="target-chip">Cible : {{ $any(ping.endpoint?.target)?.nom }}</span>
             }
             <span>Code : {{ ping.statusCode ?? 'Aucune réponse' }}</span>
             @if (!ping.success && ping.message) {
@@ -95,12 +133,12 @@
   }
 }
 
-@if (showOverlay() && overlayExecution()) {
+@if (showOverlay()) {
   <app-execution-details-overlay
     [execution]="overlayExecution()"
-    [testCaseNom]="overlayExecution()!.testcase?.nom ?? 'Exécution'"
-    [seuilMs]="overlayExecution()!.testcase?.seuilMs"
-    [tauxErreurMax]="overlayExecution()!.testcase?.tauxErreurMax"
+    [testCaseNom]="overlayScenario()?.nom ?? overlayExecution()?.testcase?.nom ?? 'Exécution'"
+    [seuilMs]="overlayScenario()?.seuilMs ?? overlayExecution()?.testcase?.seuilMs"
+    [tauxErreurMax]="overlayScenario()?.tauxErreurMax ?? overlayExecution()?.testcase?.tauxErreurMax"
     (closed)="closeOverlay()">
   </app-execution-details-overlay>
 }

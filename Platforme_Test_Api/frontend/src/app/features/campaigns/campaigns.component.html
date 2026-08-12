@@ -3,9 +3,7 @@
     <h1>Campagnes</h1>
     <p class="subtitle">Regroupez plusieurs scénarios pour les exécuter ensemble, en parallèle ou dans un ordre précis.</p>
   </div>
-  <button class="btn btn-primary" (click)="toggleForm()">
-    {{ showForm() ? 'Annuler' : 'Nouvelle campagne' }}
-  </button>
+  <button class="btn btn-primary" (click)="openForm()">Nouvelle campagne</button>
 </div>
 
 @if (error()) {
@@ -16,7 +14,13 @@
 }
 
 @if (showForm()) {
-  <form class="card form-card" (ngSubmit)="submit()">
+<div class="form-overlay-backdrop" (click)="closeForm()">
+  <div class="form-overlay-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ editingId() !== null ? 'Modifier la campagne' : 'Nouvelle campagne' }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeForm()">✕</button>
+    </div>
+    <form (ngSubmit)="submit()">
     <div class="form-grid">
       <div class="span-2">
         <label class="label" for="nom">Nom de la campagne</label>
@@ -82,7 +86,9 @@
         {{ editingId() !== null ? 'Enregistrer les modifications' : 'Créer la campagne' }}
       </button>
     </div>
-  </form>
+    </form>
+  </div>
+</div>
 }
 
 <div class="campaign-list">

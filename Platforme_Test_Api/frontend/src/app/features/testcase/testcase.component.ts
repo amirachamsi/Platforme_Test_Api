@@ -68,9 +68,15 @@ export class TestcaseComponent implements OnInit {
     this.loadTestCases();
   }
 
-  toggleForm(): void {
-    this.showForm.set(!this.showForm());
-    if (!this.showForm()) this.resetForm();
+  openForm(): void {
+    this.editingId.set(null);
+    this.form = this.emptyForm();
+    this.showForm.set(true);
+  }
+
+  closeForm(): void {
+    this.showForm.set(false);
+    this.resetForm();
   }
 
   editScenario(scenario: TestcaseItem): void {

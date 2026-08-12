@@ -70,9 +70,16 @@ export class CampaignsComponent implements OnInit {
 
   // --- Form lifecycle ---
 
-  toggleForm(): void {
-    this.showForm.set(!this.showForm());
-    if (!this.showForm()) this.resetForm();
+  openForm(): void {
+    this.editingId.set(null);
+    this.searchQuery.set('');
+    this.form = this.emptyForm();
+    this.showForm.set(true);
+  }
+
+  closeForm(): void {
+    this.showForm.set(false);
+    this.resetForm();
   }
 
   editCampaign(campaign: Campaign, event?: Event): void {

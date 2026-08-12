@@ -1,6 +1,5 @@
 package com.bct.back.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,7 +20,6 @@ public class PingResult {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "endpoint_id", nullable = false)
-    @JsonIgnoreProperties({"target"})
     private Endpoint endpoint;
 
     @Column(name = "pinged_at", nullable = false)

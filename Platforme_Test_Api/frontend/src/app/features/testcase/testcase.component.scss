@@ -7,10 +7,46 @@
 .page-header h1 { font-size: 22px; margin-bottom: 4px; }
 .subtitle { color: var(--bct-ink-soft); font-size: 14px; margin: 0; }
 
-.form-card { padding: 22px 24px; margin-bottom: 20px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 8px; }
 .span-2 { grid-column: span 2; }
 .form-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+.form-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 36, 71, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  overflow-y: auto;
+}
+.form-overlay-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(13, 36, 71, 0.25);
+}
+.form-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.form-overlay-header h2 { font-size: 18px; margin: 0; }
+.form-overlay-close {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--bct-ink-soft);
+  padding: 4px 8px;
+}
 
 .mode-toggle {
   display: inline-flex;
