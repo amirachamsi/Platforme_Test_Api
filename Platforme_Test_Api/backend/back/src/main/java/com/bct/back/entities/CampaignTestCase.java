@@ -24,7 +24,6 @@ public class CampaignTestCase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "testcase_id", nullable = false)
-    @JsonIgnoreProperties({"endpoint"})
     private TestCase testcase;
 
     // Position within the campaign, 0-based. Drives execution order in

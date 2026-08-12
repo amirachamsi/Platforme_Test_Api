@@ -1,4 +1,4 @@
- import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExecutionService } from '../../core/services/execution.service';
 import { Execution } from '../../core/models/models';
@@ -11,7 +11,12 @@ import { Execution } from '../../core/models/models';
   styleUrl: './execution-details-overlay.component.scss',
 })
 export class ExecutionDetailsOverlayComponent implements OnChanges {
-  @Input({ required: true }) testCaseId!: number;
+  // Either provide testCaseId (fetches that test case's latest execution —
+  // used by the TestCase/Campaign pages) OR provide execution directly (a
+  // specific past run — used by the History page, where "latest" would be
+  // wrong for anything but the newest row).
+  @Input() testCaseId?: number;
+  @Input() execution?: Execution | null;
   @Input({ required: true }) testCaseNom!: string;
   // Needed to compute the threshold gauges (measured value vs configured limit).
   @Input() seuilMs?: number;
@@ -26,7 +31,11 @@ export class ExecutionDetailsOverlayComponent implements OnChanges {
   constructor(private executionService: ExecutionService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['testCaseId']) {
+    if (changes['execution']) {
+      this.selectedExecution.set(this.execution ?? null);
+      this.detailsLoading.set(false);
+      this.detailsError.set(null);
+    } else if (changes['testCaseId'] && this.testCaseId != null) {
       this.loadLatest();
     }
   }
@@ -141,6 +150,7 @@ export class ExecutionDetailsOverlayComponent implements OnChanges {
   }
 
   private loadLatest(): void {
+    if (this.testCaseId == null) return;
     this.selectedExecution.set(null);
     this.detailsError.set(null);
     this.detailsLoading.set(true);

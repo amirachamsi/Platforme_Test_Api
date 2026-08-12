@@ -35,4 +35,10 @@ public class ExecutionController {
     public List<Execution> history(@PathVariable Long testCaseId) {
         return executionRepository.findByTestcaseIdOrderByDateDebutDesc(testCaseId);
     }
+
+    // All executions across every test case, newest first — for the History page.
+    @GetMapping
+    public List<Execution> all() {
+        return executionRepository.findAllByOrderByDateDebutDesc();
+    }
 }

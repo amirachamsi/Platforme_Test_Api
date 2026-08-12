@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Campaign, CampaignRequest } from '../models/models';
+import { Campaign, CampaignLaunch, CampaignRequest } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class CampaignService {
@@ -32,5 +32,10 @@ export class CampaignService {
   /** Just timestamps the launch server-side; actual executions are fired separately per test case. */
   launch(id: number): Observable<Campaign> {
     return this.http.post<Campaign>(`${this.baseUrl}/${id}/launch`, {});
+  }
+
+  /** Full launch history across every campaign, newest first — for the History page. */
+  getLaunchHistory(): Observable<CampaignLaunch[]> {
+    return this.http.get<CampaignLaunch[]>(`${this.baseUrl}/launches`);
   }
 }

@@ -2,9 +2,11 @@ package com.bct.back.services;
 
 import com.bct.back.DTO.CampaignRequest;
 import com.bct.back.entities.Campaign;
+import com.bct.back.entities.CampaignLaunch;
 import com.bct.back.entities.CampaignTestCase;
 import com.bct.back.entities.TestCase;
 import com.bct.back.enums.CampaignMode;
+import com.bct.back.repositories.CampaignLaunchRepository;
 import com.bct.back.repositories.CampaignRepository;
 import com.bct.back.repositories.TestCaseRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.List;
 public class CampaignService {
 
     private final CampaignRepository campaignRepository;
+    private final CampaignLaunchRepository campaignLaunchRepository;
     private final TestCaseRepository testCaseRepository;
 
     @Transactional(readOnly = true)
@@ -73,14 +76,32 @@ public class CampaignService {
     /**
      * Called once when a launch begins (by the frontend, before it starts firing
      * individual /api/executions/testcase/{id} calls for each test case in the
-     * campaign — see CampaignComponent). Just timestamps the launch; actual test
-     * execution is orchestrated client-side, reusing the existing single-testcase
-     * execution endpoint for both parallel and sequential modes.
+     * campaign — see CampaignComponent). Timestamps the launch on the campaign
+     * itself (for the quick "last launched" display on its card) AND records a
+     * permanent history row, since lastLaunchedAt alone only remembers the most
+     * recent launch. Actual test execution is orchestrated client-side, reusing
+     * the existing single-testcase execution endpoint for both parallel and
+     * sequential modes.
      */
     public Campaign markLaunched(Long id) {
         Campaign campaign = findById(id);
-        campaign.setLastLaunchedAt(LocalDateTime.now());
-        return campaignRepository.save(campaign);
+        LocalDateTime now = LocalDateTime.now();
+        campaign.setLastLaunchedAt(now);
+        Campaign saved = campaignRepository.save(campaign);
+
+        campaignLaunchRepository.save(CampaignLaunch.builder()
+                .campaign(saved)
+                .launchedAt(now)
+                .mode(saved.getMode())
+                .testCaseCount(saved.getTestCases().size())
+                .build());
+
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CampaignLaunch> findAllLaunches() {
+        return campaignLaunchRepository.findAllByOrderByLaunchedAtDesc();
     }
 
     private void applyTestCases(Campaign campaign, List<Long> testCaseIds) {

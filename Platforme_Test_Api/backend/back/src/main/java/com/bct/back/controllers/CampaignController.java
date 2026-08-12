@@ -2,6 +2,7 @@ package com.bct.back.controllers;
 
 import com.bct.back.DTO.CampaignRequest;
 import com.bct.back.entities.Campaign;
+import com.bct.back.entities.CampaignLaunch;
 import com.bct.back.services.CampaignService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -49,5 +50,11 @@ public class CampaignController {
     @PostMapping("/{id}/launch")
     public Campaign launch(@PathVariable Long id) {
         return campaignService.markLaunched(id);
+    }
+
+    // Full launch history across all campaigns, newest first — for the History page.
+    @GetMapping("/launches")
+    public List<CampaignLaunch> launchHistory() {
+        return campaignService.findAllLaunches();
     }
 }

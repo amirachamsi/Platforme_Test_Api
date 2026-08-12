@@ -101,16 +101,40 @@
   font-size: 13px;
 }
 .selected-item.draggable {
-  cursor: grab;
-}
-.selected-item.draggable:active {
-  cursor: grabbing;
+  cursor: default;
 }
 .drag-handle {
   color: var(--bct-ink-soft);
   font-size: 12px;
   letter-spacing: -2px;
   user-select: none;
+  cursor: grab;
+  padding: 2px 4px;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* CDK appends the floating "card being dragged" clone near <body>, outside this
+   component's normal DOM subtree — ::ng-deep is needed to style it from here. */
+::ng-deep .cdk-drag-preview {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(13, 36, 71, 0.3);
+  opacity: 1;
+  z-index: 1000;
+}
+
+/* CDK's default placeholder (no custom *cdkDragPlaceholder anymore) — kept at
+   its normal size so the list still reserves the right amount of space while
+   dragging, but fully invisible so only the floating dragged card is visible. */
+.selected-item.cdk-drag-placeholder {
+  opacity: 0;
 }
 .selected-order {
   display: inline-flex;
@@ -202,19 +226,45 @@
 }
 .campaign-testcase-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 8px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 10px;
   border-radius: 8px;
   cursor: pointer;
 }
 .campaign-testcase-row:hover { background: rgba(13, 36, 71, 0.04); }
-.campaign-testcase-name { flex: 1; font-size: 13px; color: var(--bct-navy); font-weight: 500; }
+.campaign-testcase-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.campaign-testcase-name { flex: 1; font-size: 13px; color: var(--bct-navy); font-weight: 600; }
+.campaign-testcase-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--bct-ink-soft);
+  padding-left: 2px;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(43, 91, 180, 0.12);
+  color: var(--bct-navy);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .campaign-testcase-hint {
   font-size: 11px;
   color: var(--bct-ink-soft);
   opacity: 0;
   transition: opacity 0.15s ease;
+  flex-shrink: 0;
 }
 .campaign-testcase-row:hover .campaign-testcase-hint { opacity: 1; }
 
@@ -224,8 +274,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
-  max-width: 320px;
+  max-width: 420px;
 }
 .inline-progress-label {
   font-size: 11px;

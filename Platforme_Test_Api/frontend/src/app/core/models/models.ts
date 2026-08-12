@@ -51,6 +51,15 @@ export interface TestCase {
 
 // Le rapport généré par k6 et stocké après l'exécution.
 // Champs alignés 1:1 sur l'entité backend Execution.java.
+export interface PingResult {
+  id?: number;
+  endpoint?: ApiEndpoint;
+  pingedAt?: string;
+  success: boolean;
+  statusCode?: number; // absent/null when there was no HTTP response at all (timeout, DNS, etc.)
+  message?: string;
+}
+
 export interface Execution {
   id?: number;
   correlationId?: string;
@@ -87,6 +96,14 @@ export interface Campaign {
   mode?: CampaignMode;
   lastLaunchedAt?: string;
   testCases?: CampaignTestCaseRef[];
+}
+
+export interface CampaignLaunch {
+  id?: number;
+  campaign?: Campaign;
+  launchedAt?: string;
+  mode?: CampaignMode;
+  testCaseCount?: number;
 }
 
 // Sent on create/update — a flat ordered list of testcase ids rather than the

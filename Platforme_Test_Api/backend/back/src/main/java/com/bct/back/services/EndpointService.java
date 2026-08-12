@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.bct.back.entities.PingResult;
+import com.bct.back.repositories.PingResultRepository;
+import java.time.LocalDateTime;
+
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,6 +29,7 @@ import java.util.List;
 public class EndpointService {
     private final EndpointRepository apiEndpointRepository;
     private final ApiTargetRepository apiTargetRepository;
+    private final PingResultRepository pingResultRepository;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -97,7 +102,9 @@ public class EndpointService {
 
     public void ping(Long epid) {
         Endpoint ep = apiEndpointRepository.findById(epid).orElseThrow();
-        ApiTarget target=ep.getTarget();
+        ApiTarget target = ep.getTarget();
+        LocalDateTime pingedAt = LocalDateTime.now();
+
         try {
             String url = ep.getTarget().getUrlBase();
             HttpRequest.Builder requestBuilder;
@@ -121,19 +128,34 @@ public class EndpointService {
                     && target.getKeyName() != null && target.getSecretRef() != null) {
                 requestBuilder.header(target.getKeyName(), target.getSecretRef());
             }
-            // OAUTH2: only the base URL reachability is checked here (no full
-            // client-credentials handshake).
 
             HttpResponse<Void> response = httpClient.send(requestBuilder.build(),
                     HttpResponse.BodyHandlers.discarding());
 
-            ep.setStatus(response.statusCode() == 200 || response.statusCode() == 201);
-            System.out.println("reponse: " + response.statusCode());
+            boolean ok = response.statusCode() == 200 || response.statusCode() == 201;
+            ep.setStatus(ok);
             apiEndpointRepository.save(ep);
+
+            pingResultRepository.save(PingResult.builder()
+                    .endpoint(ep)
+                    .pingedAt(pingedAt)
+                    .success(ok)
+                    .statusCode(response.statusCode())
+                    .message(ok ? "OK" : "Code de réponse inattendu")
+                    .build());
+
         } catch (Exception e) {
-            System.out.println("error: " + e.getMessage());
             ep.setStatus(false);
             apiEndpointRepository.save(ep);
+
+            pingResultRepository.save(PingResult.builder()
+                    .endpoint(ep)
+                    .pingedAt(pingedAt)
+                    .success(false)
+                    .statusCode(null)
+                    .message(e.getClass().getSimpleName() + ": " + e.getMessage())
+                    .build());
         }
     }
+
 }

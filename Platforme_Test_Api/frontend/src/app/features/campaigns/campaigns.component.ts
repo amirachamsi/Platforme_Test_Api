@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TestcaseService } from '../../core/services/testcase.service';
 import { ExecutionService } from '../../core/services/execution.service';
 import { CampaignService } from '../../core/services/campaign.service';
@@ -17,7 +18,7 @@ interface ProgressState {
 @Component({
   selector: 'app-campaign',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExecutionDetailsOverlayComponent],
+  imports: [CommonModule, FormsModule, ExecutionDetailsOverlayComponent, CdkDropList, CdkDrag, CdkDragHandle],
   templateUrl: './campaigns.component.html',
   styleUrl: './campaigns.component.scss',
 })
@@ -52,7 +53,6 @@ export class CampaignsComponent implements OnInit {
   overlayTestCase = signal<TestCase | null>(null);
 
   form = this.emptyForm();
-  private draggedIndex: number | null = null;
 
   constructor(
     private testcaseService: TestcaseService,
@@ -156,21 +156,8 @@ export class CampaignsComponent implements OnInit {
 
   // --- Drag-to-reorder (SEQUENTIELLE mode only) ---
 
-  onDragStart(index: number): void {
-    this.draggedIndex = index;
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-  }
-
-  onDrop(index: number): void {
-    if (this.draggedIndex === null || this.draggedIndex === index) return;
-    const items = [...this.form.selectedTestCases];
-    const [moved] = items.splice(this.draggedIndex, 1);
-    items.splice(index, 0, moved);
-    this.form.selectedTestCases = items;
-    this.draggedIndex = null;
+  onReorder(event: CdkDragDrop<TestCase[]>): void {
+    moveItemInArray(this.form.selectedTestCases, event.previousIndex, event.currentIndex);
   }
 
   // --- Expand/collapse + results overlay ---
@@ -182,6 +169,31 @@ export class CampaignsComponent implements OnInit {
 
   orderedRefs(campaign: Campaign): CampaignTestCaseRef[] {
     return [...(campaign.testCases ?? [])].sort((a, b) => a.ordre - b.ordre);
+  }
+
+  getTestTypeLabel(value?: string): string {
+    switch (value) {
+      case 'CHARGE': return 'Charge';
+      case 'SECURITE': return 'Sécurité';
+      case 'PERFORMANCE': return 'Performance';
+      default: return 'Fonctionnel';
+    }
+  }
+
+
+  typeLabel(testCase: TestCase): string {
+    switch (testCase.typeStatus) {
+      case 'CHARGE': return 'Charge';
+      case 'SECURITE': return 'Sécurité';
+      case 'PERFORMANCE': return 'Performance';
+      default: return 'Fonctionnel';
+    }
+  }
+
+  endpointLabel(testCase: TestCase): string {
+    const endpoint = testCase.endpoint as any;
+    if (!endpoint || typeof endpoint !== 'object' || !endpoint.methode) return '';
+    return `${endpoint.methode} ${endpoint.chemin ?? ''}`.trim();
   }
 
   openOverlay(testCase: TestCase, event?: Event): void {

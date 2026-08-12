@@ -11,4 +11,6 @@ public interface ExecutionRepository extends JpaRepository<Execution, Long> {
     List<Execution> findByTestcaseIdOrderByDateDebutDesc(Long testCaseId);
 
     Optional<Execution> findFirstByTestcaseIdOrderByDateDebutDesc(Long testCaseId);
+
+    List<Execution> findAllByOrderByDateDebutDesc();
 }

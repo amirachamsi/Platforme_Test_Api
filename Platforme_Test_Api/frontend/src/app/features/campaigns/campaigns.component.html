@@ -61,17 +61,11 @@
         @if (form.selectedTestCases.length === 0) {
           <p class="empty-hint">Aucun cas de test sélectionné. Utilisez la recherche ci-dessus.</p>
         } @else {
-          <div class="selected-list">
+          <div class="selected-list" cdkDropList [cdkDropListDisabled]="form.mode !== 'SEQUENTIELLE'" (cdkDropListDropped)="onReorder($event)">
             @for (tc of form.selectedTestCases; track tc.id; let i = $index) {
-              <div
-                class="selected-item"
-                [class.draggable]="form.mode === 'SEQUENTIELLE'"
-                [draggable]="form.mode === 'SEQUENTIELLE'"
-                (dragstart)="onDragStart(i)"
-                (dragover)="onDragOver($event)"
-                (drop)="onDrop(i)">
+              <div class="selected-item" [class.draggable]="form.mode === 'SEQUENTIELLE'" cdkDrag [cdkDragDisabled]="form.mode !== 'SEQUENTIELLE'">
                 @if (form.mode === 'SEQUENTIELLE') {
-                  <span class="drag-handle">⋮⋮</span>
+                  <span class="drag-handle" cdkDragHandle>⋮⋮</span>
                   <span class="selected-order">{{ i + 1 }}</span>
                 }
                 <span class="selected-name">{{ tc.nom }}</span>
@@ -132,10 +126,29 @@
         <div class="campaign-testcases">
           @for (ref of orderedRefs(campaign); track ref.testcase.id) {
             <div class="campaign-testcase-row" (click)="openOverlay(ref.testcase, $event)">
-              @if (campaign.mode === 'SEQUENTIELLE') {
-                <span class="selected-order">{{ ref.ordre + 1 }}</span>
-              }
-              <span class="campaign-testcase-name">{{ ref.testcase.nom }}</span>
+              <div class="campaign-testcase-header">
+                @if (campaign.mode === 'SEQUENTIELLE') {
+                  <span class="selected-order">{{ ref.ordre + 1 }}</span>
+                }
+                <span class="campaign-testcase-name">{{ ref.testcase.nom }}</span>
+                <span class="status-chip">{{ getTestTypeLabel(ref.testcase.typeStatus) }}</span>
+                @if (!testProgress().has(ref.testcase.id!)) {
+                  <span class="campaign-testcase-hint">Voir les résultats</span>
+                }
+              </div>
+
+              <div class="campaign-testcase-meta">
+                <span>{{ endpointLabel(ref.testcase) }}</span>
+                <span>Code attendu : {{ ref.testcase.expectedCode ?? '—' }}</span>
+                <span>Seuil : {{ ref.testcase.seuilMs ?? '—' }} ms</span>
+                <span>Taux d'erreur max : {{ ref.testcase.tauxErreurMax ?? 0 }}%</span>
+                <span>VUs : {{ ref.testcase.vus ?? 1 }}</span>
+                @if (ref.testcase.executionMode === 'REQUETES') {
+                  <span>Requêtes : {{ ref.testcase.nombreRequetes ?? 100 }}</span>
+                } @else {
+                  <span>Durée : {{ ref.testcase.dureeSec ?? 10 }}s</span>
+                }
+              </div>
 
               @if (testProgress().has(ref.testcase.id!)) {
                 <div class="inline-progress">
@@ -148,8 +161,6 @@
                   </div>
                   <span class="inline-progress-label">{{ testProgress().get(ref.testcase.id!)!.label }}</span>
                 </div>
-              } @else {
-                <span class="campaign-testcase-hint">Voir les résultats</span>
               }
             </div>
           }

@@ -22,4 +22,9 @@ export class ExecutionService {
   getHistory(testCaseId: number): Observable<Execution[]> {
     return this.http.get<Execution[]>(`${this.baseUrl}/testcase/${testCaseId}`);
   }
+
+  /** Every execution across every test case, newest first — for the History page. */
+  getAll(): Observable<Execution[]> {
+    return this.http.get<Execution[]>(this.baseUrl);
+  }
 }
