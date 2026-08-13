@@ -3,20 +3,41 @@
     <h1>Tableau de bord</h1>
     <p class="subtitle">Vue d'ensemble des testcases exécutés sur les endpoints configurés.</p>
   </div>
-  <a routerLink="/scenarios-de-test" class="btn btn-primary">Nouveau testcase</a>
 </div>
 
+<section class="overview-strip">
+  <div class="card overview-stat">
+    <span class="overview-value">{{ scenarioCount() ?? '—' }}</span>
+    <span class="overview-label">Scénarios</span>
+  </div>
+  <div class="card overview-stat">
+    <span class="overview-value">{{ campaignCount() ?? '—' }}</span>
+    <span class="overview-label">Campagnes</span>
+  </div>
+  <div class="card overview-stat">
+    <span class="overview-value">{{ targetCount() ?? '—' }}</span>
+    <span class="overview-label">Cibles API</span>
+  </div>
+</section>
+
 <section class="kpi-grid">
-  @for (kpi of kpis; track kpi.label) {
-    <div class="card kpi-card">
-      <span class="kpi-label">{{ kpi.label }}</span>
-      <div class="kpi-value-row">
-        <strong class="kpi-value">{{ kpi.value }}</strong>
-        @if (kpi.trend) {
-          <span class="kpi-trend" [class]="kpi.tone">{{ kpi.trend }}</span>
-        }
+  @if (loadingExecutions()) {
+    <div class="card kpi-card kpi-loading">Chargement…</div>
+    <div class="card kpi-card kpi-loading">Chargement…</div>
+    <div class="card kpi-card kpi-loading">Chargement…</div>
+    <div class="card kpi-card kpi-loading">Chargement…</div>
+  } @else {
+    @for (kpi of kpis(); track kpi.label) {
+      <div class="card kpi-card">
+        <span class="kpi-label">{{ kpi.label }}</span>
+        <div class="kpi-value-row">
+          <strong class="kpi-value">{{ kpi.value }}</strong>
+          @if (kpi.trend) {
+            <span class="kpi-trend" [class]="kpi.tone">{{ kpi.trend }}</span>
+          }
+        </div>
       </div>
-    </div>
+    }
   }
 </section>
 
@@ -26,38 +47,119 @@
       <h3>Exécutions récentes</h3>
       <a routerLink="/historique" class="link">Voir l'historique</a>
     </div>
-    <table class="table">
-      <thead>
-        <tr><th>Testcase</th><th>Statut</th><th>Code</th><th>Durée</th><th>Déclencheur</th></tr>
-      </thead>
-      <tbody>
-        @for (exec of recentExecutions; track exec.campagne) {
-          <tr>
-            <td>{{ exec.campagne }}</td>
-            <td><span class="status-chip" [class]="statutClass(exec.statut)">{{ exec.statut }}</span></td>
-            <td><span class="status-chip mono" [class]="statusClass(exec.code)">{{ exec.code }}</span></td>
-            <td>{{ exec.duree }}</td>
-            <td>{{ exec.declencheur }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    @if (loadingExecutions()) {
+      <p class="loading-text">Chargement…</p>
+    } @else if (recentExecutions().length === 0) {
+      <p class="empty-text">Aucune exécution pour le moment.</p>
+    } @else {
+      <table class="table">
+        <thead>
+          <tr><th>Testcase</th><th>Statut</th><th>Réussite</th><th>Durée</th><th>Mode</th></tr>
+        </thead>
+        <tbody>
+          @for (exec of recentExecutions(); track exec.id) {
+            <tr class="clickable-row" (click)="openExecutionOverlay(exec)">
+              <td>{{ exec.testcase?.nom ?? 'Scénario supprimé' }}</td>
+              <td><span class="status-chip" [class]="statutClass(exec.statut)">{{ exec.statut ?? '—' }}</span></td>
+              <td>{{ exec.reqReussies ?? 0 }} / {{ exec.reqTotal ?? 0 }}</td>
+              <td>{{ executionDuration(exec) }}</td>
+              <td>{{ executionMode(exec) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
   </div>
 
   <div class="card panel">
     <div class="panel-header">
-      <h3>API les plus lentes</h3>
+      <h3>Scénarios les plus lents</h3>
     </div>
-    <ul class="top-api-list">
-      @for (api of topApis; track api.nom) {
-        <li>
-          <code class="mono">{{ api.nom }}</code>
-          <div class="metrics">
-            <span>p95 : {{ api.p95 }}</span>
-            <span>Erreurs : {{ api.erreurs }}</span>
-          </div>
-        </li>
-      }
-    </ul>
+    @if (loadingExecutions()) {
+      <p class="loading-text">Chargement…</p>
+    } @else if (slowScenarios().length === 0) {
+      <p class="empty-text">Pas encore assez de données.</p>
+    } @else {
+      <ul class="top-api-list">
+        @for (scenario of slowScenarios(); track scenario.nom) {
+          <li>
+            <code class="mono">{{ scenario.nom }}</code>
+            <div class="metrics">
+              <span>p95 moyen : {{ scenario.p95 }} ms</span>
+              <span>Erreurs : {{ scenario.erreurs }} %</span>
+              <span>{{ scenario.runs }} exécution(s)</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
   </div>
 </section>
+
+<section class="grid-2">
+  <div class="card panel">
+    <div class="panel-header">
+      <h3>Dernières campagnes lancées</h3>
+      <a routerLink="/historique" class="link">Voir l'historique</a>
+    </div>
+    @if (loadingLaunches()) {
+      <p class="loading-text">Chargement…</p>
+    } @else if (recentLaunches().length === 0) {
+      <p class="empty-text">Aucune campagne n'a encore été lancée.</p>
+    } @else {
+      <ul class="launch-list">
+        @for (launch of recentLaunches(); track launch.id) {
+          <li>
+            <div class="launch-main">
+              <strong>{{ launch.campaign?.nom ?? 'Campagne supprimée' }}</strong>
+              <span class="mode-chip">{{ launch.mode === 'SEQUENTIELLE' ? 'En file' : 'En parallèle' }}</span>
+            </div>
+            <div class="metrics">
+              <span>{{ launch.testCaseCount ?? 0 }} scénario(s)</span>
+              <span>{{ launch.launchedAt | date:'short' }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="card panel">
+    <div class="panel-header">
+      <h3>Endpoints en échec récemment</h3>
+      <a routerLink="/historique" class="link">Voir l'historique</a>
+    </div>
+    @if (loadingPings()) {
+      <p class="loading-text">Chargement…</p>
+    } @else if (failedPings().length === 0) {
+      <p class="empty-text good-text">✓ Aucun échec de ping récent.</p>
+    } @else {
+      <ul class="launch-list">
+        @for (ping of failedPings(); track ping.id) {
+          <li>
+            <div class="launch-main">
+              <strong>{{ ping.endpoint?.nom ?? 'Endpoint supprimé' }}</strong>
+              <span class="status-chip s5xx">{{ ping.statusCode ?? 'Aucune réponse' }}</span>
+            </div>
+            <div class="metrics">
+              @if (ping.endpoint) {
+                <span>{{ ping.endpoint.methode }} {{ ping.endpoint.chemin }}</span>
+              }
+              <span>{{ ping.pingedAt | date:'short' }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>
+
+@if (showOverlay() && overlayExecution()) {
+  <app-execution-details-overlay
+    [execution]="overlayExecution()"
+    [testCaseNom]="overlayExecution()!.testcase?.nom ?? 'Exécution'"
+    [seuilMs]="overlayExecution()!.testcase?.seuilMs"
+    [tauxErreurMax]="overlayExecution()!.testcase?.tauxErreurMax"
+    (closed)="closeOverlay()">
+  </app-execution-details-overlay>
+}

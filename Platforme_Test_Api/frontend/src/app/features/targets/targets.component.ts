@@ -60,31 +60,64 @@ export class TargetsComponent implements OnInit {
   }
 
   
-  toggleForm(): void {
-    this.showForm.update((v) => !v);
-    this.error.set(null);
+  openTargetForm(): void {
+    this.editingId.set(null);
+    this.form = this.createEmptyForm();
+    this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
     this.formStep.set(1);
     this.endpointTab.set('params');
     this.bodyJsonError.set(null);
-    if (!this.showForm()) {
-      this.form = this.createEmptyForm();
-      this.endpointForm = this.createEmptyEndpointForm();
-      this.endpointHeaders = [];
-      this.endpointParams = [];
-    }
+    this.error.set(null);
+    this.showForm.set(true);
+  }
+
+  closeTargetForm(): void {
+    this.showForm.set(false);
+    this.resetForm();
   }
 
   selectTarget(target: ApiTarget): void {
     this.selectedTargetId.set(target.id ?? null);
     this.selectedTargetName.set(target.nom);
-    this.showEndpointForm.set(true);
+    // Was `.set(true)` — selecting a target to view its endpoints shouldn't also
+    // force the add-endpoint form open immediately.
+    this.showEndpointForm.set(false);
     this.endpointEditingId.set(null);
     this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
     this.selectedTargetAuthType.set(target.authType ?? 'NONE');
     this.selectedTargetSecretRef = target.secretRef;
     this.selectedTargetKeyName = target.keyName;
     this.selectedTargetKeyIn = target.keyIn;
     this.loadEndpoints(target.id);
+  }
+
+  closeEndpointsOverlay(): void {
+    this.selectedTargetId.set(null);
+    this.selectedTargetName.set('');
+    this.endpoints.set([]);
+    this.showEndpointForm.set(false);
+  }
+
+  openEndpointForm(): void {
+    this.endpointEditingId.set(null);
+    this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
+    this.endpointError.set(null);
+    this.showEndpointForm.set(true);
+  }
+
+  closeEndpointForm(): void {
+    this.showEndpointForm.set(false);
+    this.endpointEditingId.set(null);
+    this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
+    this.endpointError.set(null);
   }
 
   private loadEndpoints(targetId?: number): void {
@@ -105,6 +138,9 @@ export class TargetsComponent implements OnInit {
     this.endpointForm = this.createEmptyEndpointForm();
     this.endpointHeaders = [];
     this.endpointParams = [];
+    this.formStep.set(1);
+    this.endpointTab.set('params');
+    this.bodyJsonError.set(null);
     this.showForm.set(true);
     this.error.set(null);
   }

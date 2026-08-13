@@ -1,12 +1,15 @@
 <div class="page-header">
- 
-  <button class="btn btn-primary" (click)="toggleForm()">
-    {{ showForm() ? 'Annuler' : 'Nouvelle cible' }}
-  </button>
+  <button class="btn btn-primary" (click)="openTargetForm()">Nouvelle cible</button>
 </div>
 
 @if (showForm()) {
-  <form class="card form-card" (ngSubmit)="submit()">
+<div class="form-overlay-backdrop" (click)="closeTargetForm()">
+  <div class="form-overlay-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ editingId() !== null ? 'Modifier la cible' : 'Nouvelle cible' }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeTargetForm()">✕</button>
+    </div>
+    <form (ngSubmit)="submit()">
     @if (editingId() === null) {
       <nav class="stepper" aria-label="Étapes de configuration">
         <button type="button" [class.active]="formStep() === 1" (click)="goToStep(1)">1. Cible</button>
@@ -172,8 +175,8 @@
       <option value="Authorization"></option>
     </datalist>
 
-    @if (error()) { 
-      <div class="error-banner">{{ error() }}</div> 
+    @if (error()) {
+      <div class="error-banner">{{ error() }}</div>
     }
 
     <div class="form-actions">
@@ -191,28 +194,29 @@
       </button>
       }
     </div>
-  </form>
+    </form>
+  </div>
+</div>
 }
 
 <section class="targets-section" aria-labelledby="targets-title">
   <div class="section-header">
     <div>
       <h2 id="targets-title">Cibles API</h2>
-      <p class="subtitle">Sélectionnez une cible pour gérer ses endpoints.</p>
+      <p class="subtitle">Cliquez sur une cible pour voir et gérer ses endpoints.</p>
     </div>
   </div>
   <div class="target-grid">
     @for (target of targets(); track target.id) {
-      <article class="target-card" [class.selected]="selectedTargetId() === target.id">
+      <article class="target-card" [class.selected]="selectedTargetId() === target.id" (click)="selectTarget(target)">
         <div class="target-card-header">
           <h3>{{ target.nom }}</h3>
           <span class="auth-badge" [class.auth-bearer]="target.authType === 'BEARER'" [class.auth-api-key]="target.authType === 'API_KEY'" [class.auth-oauth]="target.authType === 'OAUTH2'">{{ target.authType || 'NONE' }}</span>
         </div>
         <code class="target-url">{{ target.urlBase }}</code>
         <div class="target-card-actions">
-          <button class="btn btn-primary" type="button" (click)="selectTarget(target)">Gérer les Endpoints</button>
-          <button class="action-btn action-btn-edit" type="button" (click)="editTarget(target)">Modifier</button>
-          <button class="action-btn action-btn-delete" type="button" (click)="deleteTarget(target)">Supprimer</button>
+          <button class="action-btn action-btn-edit" type="button" (click)="editTarget(target); $event.stopPropagation()">Modifier</button>
+          <button class="action-btn action-btn-delete" type="button" (click)="deleteTarget(target); $event.stopPropagation()">Supprimer</button>
         </div>
       </article>
     } @empty {
@@ -222,18 +226,81 @@
 </section>
 
 @if (selectedTargetId()) {
-  <div class="section-header">
-    <div>
+<div class="form-overlay-backdrop" (click)="closeEndpointsOverlay()">
+  <div class="form-overlay-panel wide-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
       <h2>Endpoints pour : {{ selectedTargetName() }}</h2>
-      <p class="subtitle">Ajoutez ou modifiez des endpoints et indiquez la méthode HTTP.</p>
+      <button type="button" class="form-overlay-close" (click)="closeEndpointsOverlay()">✕</button>
     </div>
-    <button class="btn btn-secondary" (click)="showEndpointForm.set(!showEndpointForm())">
-      {{ showEndpointForm() ? 'Annuler' : '+ Ajouter un Endpoint' }}
-    </button>
-  </div>
 
-  @if (showEndpointForm()) {
-    <form class="card form-card" (ngSubmit)="submitEndpoint()">
+    <div class="endpoints-overlay-toolbar">
+      <button class="btn btn-primary" type="button" (click)="openEndpointForm()">+ Ajouter un Endpoint</button>
+    </div>
+
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Méthode</th>
+            <th>Statut</th>
+            <th>Chemin</th>
+            <th>Temps max</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (endpoint of endpoints(); track endpoint.id) {
+            <tr>
+              <td>{{ endpoint.nom }}</td>
+              <td><span class="method-badge" [class.method-get]="endpoint.methode === 'GET'" [class.method-post]="endpoint.methode === 'POST'" [class.method-put]="endpoint.methode === 'PUT'" [class.method-delete]="endpoint.methode === 'DELETE'">{{ endpoint.methode }}</span></td>
+              <td>
+                @if (isEndpointPinging(endpoint)) {
+                  <span class="status-pill status-loading"><span class="spinner" aria-hidden="true"></span> Ping en cours</span>
+                } @else {
+                  <span class="status-pill" [class.status-up]="endpoint.status === true" [class.status-down]="endpoint.status === false" [class.status-unknown]="endpoint.status === undefined || endpoint.status === null">
+                    {{ endpoint.status === true ? 'Actif' : endpoint.status === false ? 'Inactif' : 'Inconnu' }}
+                  </span>
+                }
+              </td>
+              <td><code class="mono">{{ endpoint.chemin }}</code></td>
+              <td>{{ endpoint.tempsMaxMs ?? '–' }}</td>
+              <td class="text-right actions-cell">
+                <button class="action-btn action-btn-ping" type="button" [disabled]="isEndpointPinging(endpoint)" (click)="pingEndpoint(endpoint)">
+                  <span class="action-icon">⟳</span>
+                  <span class="action-label">Ping</span>
+                </button>
+                <button class="action-btn action-btn-edit" title="Modifier" (click)="editEndpoint(endpoint)">
+                  <span class="action-icon">✏️</span>
+                  <span class="action-label">Modifier</span>
+                </button>
+                <button class="action-btn action-btn-delete" title="Supprimer" (click)="deleteEndpoint(endpoint)">
+                  <span class="action-icon">🗑️</span>
+                  <span class="action-label">Supprimer</span>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">Aucun endpoint configuré pour cette cible.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+}
+
+@if (showEndpointForm()) {
+<div class="form-overlay-backdrop nested-overlay-backdrop" (click)="closeEndpointForm()">
+  <div class="form-overlay-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ endpointEditingId() !== null ? "Modifier l'endpoint" : 'Ajouter un endpoint' }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeEndpointForm()">✕</button>
+    </div>
+
+    <form (ngSubmit)="submitEndpoint()">
       <div class="form-grid">
         <div>
           <label class="label" for="endpointNom">Nom de l'endpoint</label>
@@ -261,7 +328,6 @@
           <input class="input" id="authInfo" name="authInfo" [value]="selectedTargetAuthType()" disabled />
         </div>
 
-
         <div class="span-2">
           <label class="label">En-têtes (Headers)</label>
           <div class="kv-list">
@@ -273,7 +339,6 @@
             <div class="kv-add">
               <button type="button" class="btn btn-secondary" (click)="addHeader()">+ Ajouter un header</button>
             </div>
-           
           </div>
         </div>
 
@@ -333,110 +398,6 @@
         </button>
       </div>
     </form>
-  }
-
-  <div class="card">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Méthode</th>
-          <th>Statut</th>
-          <th>Chemin</th>
-          <th>Temps max</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (endpoint of endpoints(); track endpoint.id) {
-          <tr>
-            <td>{{ endpoint.nom }}</td>
-            <td><span class="method-badge" [class.method-get]="endpoint.methode === 'GET'" [class.method-post]="endpoint.methode === 'POST'" [class.method-put]="endpoint.methode === 'PUT'" [class.method-delete]="endpoint.methode === 'DELETE'">{{ endpoint.methode }}</span></td>
-            <td>
-              @if (isEndpointPinging(endpoint)) {
-                <span class="status-pill status-loading"><span class="spinner" aria-hidden="true"></span> Ping en cours</span>
-              } @else {
-                <span class="status-pill" [class.status-up]="endpoint.status === true" [class.status-down]="endpoint.status === false" [class.status-unknown]="endpoint.status === undefined || endpoint.status === null">
-                  {{ endpoint.status === true ? 'Actif' : endpoint.status === false ? 'Inactif' : 'Inconnu' }}
-                </span>
-              }
-            </td>
-            <td><code class="mono">{{ endpoint.chemin }}</code></td>
-            <td>{{ endpoint.tempsMaxMs ?? '–' }}</td>
-            <td class="text-right actions-cell">
-              <button class="action-btn action-btn-ping" type="button" [disabled]="isEndpointPinging(endpoint)" (click)="pingEndpoint(endpoint)">
-                <span class="action-icon">⟳</span>
-                <span class="action-label">Ping</span>
-              </button>
-              <button class="action-btn action-btn-edit" title="Modifier" (click)="editEndpoint(endpoint)">
-                <span class="action-icon">✏️</span>
-                <span class="action-label">Modifier</span>
-              </button>
-              <button class="action-btn action-btn-delete" title="Supprimer" (click)="deleteEndpoint(endpoint)">
-                <span class="action-icon">🗑️</span>
-                <span class="action-label">Supprimer</span>
-              </button>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="6" class="empty">Aucun endpoint configuré pour cette cible.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
   </div>
-}
-
-@if (!selectedTargetId()) {
-  <section class="endpoints-empty-state">
-    <h2>Endpoints</h2>
-    <p>Cliquez sur une cible pour afficher et gérer ses endpoints.</p>
-  </section>
-}
-
-<!-- Tableau des cibles conservé pour compatibilité, remplacé visuellement par les cartes. -->
-<div class="card legacy-targets-table">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Nom</th>
-        <th>URL de base</th>
-        <th>Auth</th>
-        <th>Statut</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (t of targets(); track t.id) {
-        <tr>
-          <td><strong>{{ t.nom }}</strong></td>
-          <td><code class="mono">{{ t.urlBase }}</code></td>
-          <td><span class="badge">{{ t.authType || 'NONE' }}</span></td>
-          <td>
-            <span class="status-chip" [class]="t.actif !== false ? 's2xx' : 's4xx'">
-              {{ t.actif !== false ? 'Active' : 'Inactive' }}
-            </span>
-          </td>
-          <td class="text-right actions-cell">
-            <button class="action-btn action-btn-secondary" title="Endpoints" (click)="selectTarget(t)">
-              <span class="action-icon">🔗</span>
-              <span class="action-label">Endpoints</span>
-            </button>
-            <button class="action-btn action-btn-edit" title="Modifier" (click)="editTarget(t)">
-              <span class="action-icon">✏️</span>
-              <span class="action-label">Modifier</span>
-            </button>
-            <button class="action-btn action-btn-delete" title="Supprimer" (click)="deleteTarget(t)">
-              <span class="action-icon">🗑️</span>
-              <span class="action-label">Supprimer</span>
-            </button>
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="4" class="empty">Aucune cible configurée pour le moment.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
 </div>
+}
