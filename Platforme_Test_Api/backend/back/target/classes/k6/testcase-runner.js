@@ -4,8 +4,7 @@ import { Rate, Trend } from 'k6/metrics';
 import crypto from 'k6/crypto';
 
 /**
- * Generic k6 runner driven entirely by environment variables, launched by
- * K6Runner.java. Place this file at: src/main/resources/k6/testcase-runner.js
+ * Generic k6 runner driven entirely by environment variables, launched by K6Runner
  */
 
 const TARGET_URL = __ENV.TARGET_URL;

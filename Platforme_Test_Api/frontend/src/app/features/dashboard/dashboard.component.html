@@ -6,18 +6,18 @@
 </div>
 
 <section class="overview-strip">
-  <div class="card overview-stat">
+  <a routerLink="/scenarios-de-test" class="card overview-stat">
     <span class="overview-value">{{ scenarioCount() ?? '—' }}</span>
     <span class="overview-label">Scénarios</span>
-  </div>
-  <div class="card overview-stat">
+  </a>
+  <a routerLink="/campagnes" class="card overview-stat">
     <span class="overview-value">{{ campaignCount() ?? '—' }}</span>
     <span class="overview-label">Campagnes</span>
-  </div>
-  <div class="card overview-stat">
+  </a>
+  <a routerLink="/cibles" class="card overview-stat">
     <span class="overview-value">{{ targetCount() ?? '—' }}</span>
     <span class="overview-label">Cibles API</span>
-  </div>
+  </a>
 </section>
 
 <section class="kpi-grid">
