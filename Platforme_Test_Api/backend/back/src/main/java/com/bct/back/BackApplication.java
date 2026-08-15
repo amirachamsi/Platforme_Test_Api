@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class BackApplication {
 
     public static void main(String[] args) {
+        System.setProperty("java.net.useSystemProxies", "true");
         SpringApplication.run(BackApplication.class, args);
     }
 

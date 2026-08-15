@@ -54,6 +54,21 @@ public class TestCaseService {
         existing.setSeuilMs(payload.getSeuilMs());
         existing.setTauxErreurMax(payload.getTauxErreurMax());
         existing.setTimeoutMs(payload.getTimeoutMs());
+        existing.setExpectedCode(payload.getExpectedCode());
+        existing.setJSONBody(payload.getJSONBody());
+        existing.setAssertions(payload.getAssertions());
+        if (payload.getVus() != null) {
+            existing.setVus(payload.getVus());
+        }
+        if (payload.getDureeSec() != null) {
+            existing.setDureeSec(payload.getDureeSec());
+        }
+        if (payload.getExecutionMode() != null) {
+            existing.setExecutionMode(payload.getExecutionMode());
+        }
+        if (payload.getNombreRequetes() != null) {
+            existing.setNombreRequetes(payload.getNombreRequetes());
+        }
         if (payload.getEndpoint() != null && payload.getEndpoint().getId() != null) {
             existing.setEndpoint(resolveEndpoint(payload.getEndpoint()));
         }

@@ -7,10 +7,73 @@
 .page-header h1 { font-size: 22px; margin-bottom: 4px; }
 .subtitle { color: var(--bct-ink-soft); font-size: 14px; margin: 0; }
 
-.form-card { padding: 22px 24px; margin-bottom: 20px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 8px; }
 .span-2 { grid-column: span 2; }
 .form-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+.form-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 36, 71, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  overflow-y: auto;
+}
+.form-overlay-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(13, 36, 71, 0.25);
+}
+.form-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.form-overlay-header h2 { font-size: 18px; margin: 0; }
+.form-overlay-close {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--bct-ink-soft);
+  padding: 4px 8px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(13, 36, 71, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mode-btn {
+  border: none;
+  background: #fff;
+  color: var(--bct-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mode-btn:not(:last-child) {
+  border-right: 1px solid rgba(13, 36, 71, 0.15);
+}
+.mode-btn.active {
+  background: var(--bct-navy);
+  color: #fff;
+}
+.mode-btn:hover:not(.active) {
+  background: rgba(13, 36, 71, 0.05);
+}
 
 .scenario-list { display: flex; flex-direction: column; gap: 12px; }
 .scenario-card {
@@ -117,6 +180,36 @@
   transition: width 0.3s ease;
 }
 
+/* Estimated (not known) duration: a diagonal stripe pattern instead of a solid
+   fill, so it visually reads as "a guess" rather than a confident measurement. */
+.progress-fill.estimate {
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.35) 0 6px,
+      transparent 6px 12px
+    ),
+    linear-gradient(90deg, var(--bct-navy), #3f86ff);
+}
+
+/* No known/estimable duration at all: an indeterminate sliding stripe, no
+   percentage shown alongside it (see template). */
+.progress-bar.indeterminate {
+  position: relative;
+}
+.progress-fill-indeterminate {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--bct-navy), #3f86ff);
+  animation: progress-indeterminate-slide 1.3s ease-in-out infinite;
+}
+@keyframes progress-indeterminate-slide {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
 .action-icon {
   font-size: 13px;
 }
@@ -126,3 +219,13 @@
 }
 
 .empty-state { padding: 32px; text-align: center; color: var(--bct-ink-soft); }
+
+.scenario-card { cursor: pointer; }
+
+.run-error {
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  color: var(--bct-danger);
+  background: rgba(212, 63, 63, 0.08);
+  font-size: 13px;
+}

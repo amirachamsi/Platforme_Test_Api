@@ -33,4 +33,8 @@ export class EndpointService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  ping(id: number): Observable<void> {
+    return this.http.get<void>(`${this.baseUrl}/ping/${id}`);
+  }
 }

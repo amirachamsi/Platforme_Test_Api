@@ -18,10 +18,7 @@ public class TestCaseController {
     private final TestCaseService testCaseService;
 
     @GetMapping
-    public List<TestCase> findAll(@RequestParam(required = false) Long endpointId) {
-        if (endpointId != null) {
-            return testCaseService.findByEndpointId(endpointId);
-        }
+    public List<TestCase> findAll() {
         return testCaseService.findAll();
     }
 

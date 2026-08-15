@@ -33,16 +33,14 @@ public class Endpoint {
     @Column(nullable = false)
     private String chemin;
 
-    @Lob //la colonne accepte une taille quasi illimitée
+    //la colonne accepte une taille quasi illimitée
     private String headers;
 
-    @Lob
     private String params;
 
     @Column(name = "content_type")
     private String contentType;
 
-    @Lob
     private String body;
 
     @Column(name = "code_attendu")
@@ -50,4 +48,7 @@ public class Endpoint {
 
     @Column(name = "temps_max_ms")
     private Integer tempsMaxMs;
+
+    @Builder.Default
+    private Boolean status=null;
 }

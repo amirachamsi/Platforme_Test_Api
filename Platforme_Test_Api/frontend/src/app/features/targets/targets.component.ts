@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ApiTargetService } from '../../core/services/api-target.service';
 import { EndpointService } from '../../core/services/endpoint.service';
 import { ApiTarget, ApiEndpoint } from '../../core/models/models';
@@ -29,6 +30,7 @@ export class TargetsComponent implements OnInit {
   endpointSaving = signal(false);
   endpointError = signal<string | null>(null);
   endpointEditingId = signal<number | null>(null);
+  pingingEndpointId = signal<number | null>(null);
   formStep = signal<1 | 2 | 3>(1);
   endpointTab = signal<'params' | 'headers' | 'body'>('params');
   bodyJsonError = signal<string | null>(null);
@@ -58,31 +60,64 @@ export class TargetsComponent implements OnInit {
   }
 
   
-  toggleForm(): void {
-    this.showForm.update((v) => !v);
-    this.error.set(null);
+  openTargetForm(): void {
+    this.editingId.set(null);
+    this.form = this.createEmptyForm();
+    this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
     this.formStep.set(1);
     this.endpointTab.set('params');
     this.bodyJsonError.set(null);
-    if (!this.showForm()) {
-      this.form = this.createEmptyForm();
-      this.endpointForm = this.createEmptyEndpointForm();
-      this.endpointHeaders = [];
-      this.endpointParams = [];
-    }
+    this.error.set(null);
+    this.showForm.set(true);
+  }
+
+  closeTargetForm(): void {
+    this.showForm.set(false);
+    this.resetForm();
   }
 
   selectTarget(target: ApiTarget): void {
     this.selectedTargetId.set(target.id ?? null);
     this.selectedTargetName.set(target.nom);
-    this.showEndpointForm.set(true);
+    // Was `.set(true)` — selecting a target to view its endpoints shouldn't also
+    // force the add-endpoint form open immediately.
+    this.showEndpointForm.set(false);
     this.endpointEditingId.set(null);
     this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
     this.selectedTargetAuthType.set(target.authType ?? 'NONE');
     this.selectedTargetSecretRef = target.secretRef;
     this.selectedTargetKeyName = target.keyName;
     this.selectedTargetKeyIn = target.keyIn;
     this.loadEndpoints(target.id);
+  }
+
+  closeEndpointsOverlay(): void {
+    this.selectedTargetId.set(null);
+    this.selectedTargetName.set('');
+    this.endpoints.set([]);
+    this.showEndpointForm.set(false);
+  }
+
+  openEndpointForm(): void {
+    this.endpointEditingId.set(null);
+    this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
+    this.endpointError.set(null);
+    this.showEndpointForm.set(true);
+  }
+
+  closeEndpointForm(): void {
+    this.showEndpointForm.set(false);
+    this.endpointEditingId.set(null);
+    this.endpointForm = this.createEmptyEndpointForm();
+    this.endpointHeaders = [];
+    this.endpointParams = [];
+    this.endpointError.set(null);
   }
 
   private loadEndpoints(targetId?: number): void {
@@ -103,6 +138,9 @@ export class TargetsComponent implements OnInit {
     this.endpointForm = this.createEmptyEndpointForm();
     this.endpointHeaders = [];
     this.endpointParams = [];
+    this.formStep.set(1);
+    this.endpointTab.set('params');
+    this.bodyJsonError.set(null);
     this.showForm.set(true);
     this.error.set(null);
   }
@@ -411,6 +449,25 @@ export class TargetsComponent implements OnInit {
         this.endpoints.update((list) => list.filter((item) => item.id !== endpoint.id));
       },
     });
+  }
+
+  pingEndpoint(endpoint: ApiEndpoint): void {
+    if (!endpoint.id || this.pingingEndpointId() !== null) {
+      return;
+    }
+
+    this.pingingEndpointId.set(endpoint.id);
+    this.endpointService
+      .ping(endpoint.id)
+      .pipe(finalize(() => this.pingingEndpointId.set(null)))
+      .subscribe({
+        next: () => this.loadEndpoints(this.selectedTargetId()!),
+        error: () => this.loadEndpoints(this.selectedTargetId()!),
+      });
+  }
+
+  isEndpointPinging(endpoint: ApiEndpoint): boolean {
+    return this.pingingEndpointId() === endpoint.id;
   }
 
   private finishSubmit(): void {

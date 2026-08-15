@@ -9,9 +9,8 @@ export class TestcaseService {
 
   constructor(private http: HttpClient) {}
 
-  list(endpointId?: number): Observable<TestCase[]> {
-    const params = endpointId != null ? new HttpParams().set('endpointId', endpointId.toString()) : undefined;
-    return this.http.get<TestCase[]>(this.baseUrl, { params });
+  list(): Observable<TestCase[]> {
+    return this.http.get<TestCase[]>(this.baseUrl);
   }
 
   getById(id: number): Observable<TestCase> {

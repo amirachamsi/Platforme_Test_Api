@@ -1,0 +1,147 @@
+<div class="overlay-backdrop" (click)="close()">
+  <div class="overlay-panel" (click)="$event.stopPropagation()">
+    <div class="overlay-header">
+      <h2>{{ testCaseNom }}</h2>
+      <div class="overlay-header-actions">
+        @if (selectedExecution()?.id) {
+          <button type="button" class="download-btn download-btn-secondary" (click)="downloadReportFile()" [disabled]="downloadLoading()">
+            Télécharger
+          </button>
+          <button type="button" class="download-btn" (click)="openReport()" [disabled]="downloadLoading()">
+            {{ downloadFeedback() ? downloadFeedback() : (downloadLoading() ? 'Génération…' : 'Voir le rapport') }}
+          </button>
+        }
+        <button class="overlay-close" (click)="close()">✕</button>
+      </div>
+    </div>
+
+    @if (detailsLoading()) {
+      <p class="overlay-loading">Chargement des résultats…</p>
+    } @else if (detailsError()) {
+      <p class="overlay-error">{{ detailsError() }}</p>
+    } @else if (!selectedExecution()) {
+      <p class="overlay-empty">Aucune exécution pour ce scénario pour le moment. Cliquez sur « Exécuter » pour lancer le premier test.</p>
+    } @else {
+      <div class="overlay-status"
+           [class.status-pass]="selectedExecution()!.statut === 'REUSSIE'"
+           [class.status-partial]="selectedExecution()!.statut === 'PARTIELLE'"
+           [class.status-fail]="selectedExecution()!.statut === 'ECHOUEE'">
+        {{ selectedExecution()!.statut ?? 'Statut inconnu' }}
+      </div>
+
+      <div class="overlay-hero">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 100 100" class="donut">
+            <circle class="donut-track" cx="50" cy="50" r="42"></circle>
+            <circle class="donut-fill" cx="50" cy="50" r="42"
+              [attr.stroke-dasharray]="donutCircumference"
+              [attr.stroke-dashoffset]="donutSuccessOffset"></circle>
+          </svg>
+          <div class="donut-center">
+            <strong>{{ executionSuccessPercent | number:'1.1-1' }}%</strong>
+            <span>réussite</span>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="legend-row">
+            <span class="legend-dot legend-success"></span>
+            <span>Réussies</span>
+            <strong>{{ selectedExecution()!.reqReussies ?? 0 }}</strong>
+          </div>
+          <div class="legend-row">
+            <span class="legend-dot legend-fail"></span>
+            <span>Échouées</span>
+            <strong>{{ selectedExecution()!.reqEchouees ?? 0 }}</strong>
+          </div>
+          <div class="legend-row legend-total">
+            <span>Total</span>
+            <strong>{{ selectedExecution()!.reqTotal ?? 0 }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="gauge-row">
+        <div class="gauge">
+          <div class="gauge-label">
+            <span>Temps de réponse (P95) <span class="info-icon" data-tooltip="95% des requêtes ont répondu en dessous de cette durée. La barre montre à quel point on est proche du seuil configuré.">ⓘ</span></span>
+            <strong [class.over-limit]="p95OverLimit">{{ selectedExecution()!.p95MesureMs ?? '—' }} ms <span class="gauge-limit">/ {{ seuilMs ?? '—' }} ms</span></strong>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" [class.over-limit]="p95OverLimit" [style.width.%]="p95GaugePercent"></div>
+          </div>
+        </div>
+
+        <div class="gauge">
+          <div class="gauge-label">
+            <span>Taux d’erreur <span class="info-icon" data-tooltip="Pourcentage de requêtes en échec. La barre montre à quel point on est proche du seuil configuré.">ⓘ</span></span>
+            <strong [class.over-limit]="errorRateOverLimit">{{ selectedExecution()!.tauxErreurMesure != null ? (selectedExecution()!.tauxErreurMesure | number:'1.1-1') : '—' }}% <span class="gauge-limit">/ {{ tauxErreurMax ?? '—' }}%</span></strong>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" [class.over-limit]="errorRateOverLimit" [style.width.%]="errorRateGaugePercent"></div>
+          </div>
+        </div>
+      </div>
+
+      @if (observedStatusCodes.length > 0) {
+        <div class="status-codes-block">
+          <span class="status-codes-label">Codes de réponse observés</span>
+          <div class="status-codes-list">
+            @for (item of observedStatusCodes; track item.code) {
+              <span class="status-code-badge" [ngClass]="statusCodeClass(item.code)" [title]="item.code === '0' ? 'Aucune réponse HTTP reçue (timeout, DNS, connexion refusée, etc.)' : ''">
+                {{ statusCodeLabel(item.code) }} <strong>× {{ item.count }}</strong>
+              </span>
+            }
+          </div>
+        </div>
+      }
+
+      @if (responseBodyVariants.length > 0) {
+        <div class="body-variants-block">
+          <span class="status-codes-label">Corps de réponse observés <span class="info-icon" data-tooltip="Regroupe les requêtes par contenu de réponse identique. Si l'API répond toujours la même chose, une seule entrée apparaît ici avec le nombre total.">ⓘ</span></span>
+          <div class="body-variants-list">
+            @for (variant of responseBodyVariants; track variant.preview) {
+              <div class="body-variant-row">
+                <span class="body-variant-count">× {{ variant.count }}</span>
+                <code class="body-variant-preview">{{ variant.preview }}</code>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="overlay-grid overlay-grid-secondary">
+        <div class="overlay-stat">
+          <span class="overlay-stat-label">RPS moyen <span class="info-icon" data-tooltip="Nombre moyen de requêtes envoyées par seconde pendant le test.">ⓘ</span></span>
+          <strong>{{ selectedExecution()!.rpsMoyen != null ? (selectedExecution()!.rpsMoyen | number:'1.1-1') : '—' }}</strong>
+        </div>
+        <div class="overlay-stat">
+          <span class="overlay-stat-label">VUs utilisés <span class="info-icon" data-tooltip="Nombre d’utilisateurs virtuels simulés simultanément pendant ce test.">ⓘ</span></span>
+          <strong>{{ selectedExecution()!.vus ?? '—' }}</strong>
+        </div>
+        <div class="overlay-stat">
+          @if (selectedExecution()!.executionMode === 'REQUETES') {
+            <span class="overlay-stat-label">Requêtes demandées <span class="info-icon" data-tooltip="Nombre total de requêtes que ce run devait envoyer (mode « Nombre de requêtes »).">ⓘ</span></span>
+            <strong>{{ selectedExecution()!.nombreRequetes ?? '—' }}</strong>
+          } @else {
+            <span class="overlay-stat-label">Durée du test <span class="info-icon" data-tooltip="Durée pendant laquelle k6 a envoyé du trafic lors de ce run.">ⓘ</span></span>
+            <strong>{{ selectedExecution()!.dureeSec ?? '—' }}s</strong>
+          }
+        </div>
+        <div class="overlay-stat">
+          <span class="overlay-stat-label">Démarré à</span>
+          <strong>{{ selectedExecution()!.dateDebut | date:'short' }}</strong>
+        </div>
+      </div>
+
+      <details class="overlay-raw">
+        <summary>
+          <span>Rapport k6 brut</span>
+          <button type="button" class="copy-btn" (click)="copyRawReport($event)">
+            {{ copyFeedback() ? copyFeedback() : 'Copier' }}
+          </button>
+        </summary>
+        <pre>{{ selectedExecution()!.rapportK6Json }}</pre>
+      </details>
+    }
+  </div>
+</div>

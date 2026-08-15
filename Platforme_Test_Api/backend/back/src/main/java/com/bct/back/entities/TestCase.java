@@ -1,5 +1,6 @@
 package com.bct.back.entities;
 
+import com.bct.back.enums.ExecutionMode;
 import com.bct.back.enums.TestStatus;
 import com.bct.back.enums.TypeStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -43,4 +44,33 @@ public class TestCase {
 
     @Column(name = "timeout_ms")
     private Integer timeoutMs;
+
+    private String expectedCode;
+
+    private String JSONBody;
+
+    private String Assertions;
+
+    // Nombre d'utilisateurs virtuels (VUs) à utiliser lors de l'exécution k6.
+    @Column(name = "vus")
+    @Builder.Default
+    private Integer vus = 1;
+
+    // Durée du test k6 en secondes. Utilisé uniquement si executionMode = DUREE.
+    @Column(name = "duree_sec")
+    @Builder.Default
+    private Integer dureeSec = 10;
+
+    // DUREE : le test tourne pendant dureeSec secondes.
+    // REQUETES : le test s'arrête après nombreRequetes requêtes au total, quelle
+    // que soit la durée réelle.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "execution_mode")
+    @Builder.Default
+    private ExecutionMode executionMode = ExecutionMode.DUREE;
+
+    // Nombre total de requêtes à envoyer. Utilisé uniquement si executionMode = REQUETES.
+    @Column(name = "nombre_requetes")
+    @Builder.Default
+    private Integer nombreRequetes = 100;
 }

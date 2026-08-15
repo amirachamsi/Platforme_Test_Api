@@ -56,4 +56,10 @@ public class EndpointController {
         apiEndpointService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/ping/{id}")
+    public ResponseEntity<Void> ping(@PathVariable Long id) {
+        apiEndpointService.ping(id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -3,13 +3,17 @@
     <h1>Scénarios de test</h1>
     <p class="subtitle">Choisissez le type de test et l’endpoint à vérifier avant d’enregistrer votre scénario.</p>
   </div>
-  <button class="btn btn-primary" (click)="toggleForm()">
-    {{ showForm() ? 'Annuler' : 'Nouveau scénario' }}
-  </button>
+  <button class="btn btn-primary" (click)="openForm()">Nouveau scénario</button>
 </div>
 
 @if (showForm()) {
-  <form class="card form-card" (ngSubmit)="submit()">
+<div class="form-overlay-backdrop" (click)="closeForm()">
+  <div class="form-overlay-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ editingId() !== null ? 'Modifier le scénario' : 'Nouveau scénario' }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeForm()">✕</button>
+    </div>
+    <form (ngSubmit)="submit()">
     <div class="form-grid">
       <div class="span-2">
         <label class="label" for="nom">Nom du scénario</label>
@@ -37,25 +41,53 @@
       </div>
 
       <div>
-        <label class="label" for="codeAttendu">Code attendu</label>
-        <input class="input" id="codeAttendu" name="codeAttendu" type="number" [(ngModel)]="form.codeAttendu" />
+        <label class="label" for="expectedCode">Code attendu</label>
+        <input class="input" id="expectedCode" name="expectedCode" [(ngModel)]="form.expectedCode" placeholder="Ex. 200" />
       </div>
 
       <div>
-        <label class="label" for="seuilMs">Seuil max (ms)</label>
+        <label class="label" for="seuilMs">Seuil de temps de réponse max (ms)</label>
         <input class="input" id="seuilMs" name="seuilMs" type="number" [(ngModel)]="form.seuilMs" />
       </div>
 
       <div>
-        <label class="label" for="vus">Utilisateurs simultanés (VUs)</label>
-        <input class="input" type="number" id="vus" name="vus" [(ngModel)]="form.vus" placeholder="Ex. 10" />
+        <label class="label" for="tauxErreurMax">Taux d’erreur max (%)</label>
+        <input class="input" id="tauxErreurMax" name="tauxErreurMax" type="number" step="0.1" [(ngModel)]="form.tauxErreurMax" />
       </div>
 
-    
+      <div>
+        <label class="label" for="timeoutMs">Timeout (ms)</label>
+        <input class="input" id="timeoutMs" name="timeoutMs" type="number" [(ngModel)]="form.timeoutMs" />
+      </div>
+
+      <div>
+        <label class="label" for="vus">Utilisateurs simultanés (VUs)</label>
+        <input class="input" id="vus" name="vus" type="number" min="1" [(ngModel)]="form.vus" placeholder="Ex. 10" />
+      </div>
 
       <div class="span-2">
-        <label class="label" for="donnees">Payload / Corps de la requête (JSON)</label>
-        <textarea class="input mono" id="donnees" name="donnees" rows="4" [(ngModel)]="form.donnees" placeholder='{
+        <label class="label">Mode d'exécution</label>
+        <div class="mode-toggle">
+          <button type="button" class="mode-btn" [class.active]="form.executionMode === 'DUREE'" (click)="form.executionMode = 'DUREE'">Durée fixe</button>
+          <button type="button" class="mode-btn" [class.active]="form.executionMode === 'REQUETES'" (click)="form.executionMode = 'REQUETES'">Nombre de requêtes</button>
+        </div>
+      </div>
+
+      @if (form.executionMode === 'DUREE') {
+        <div>
+          <label class="label" for="dureeSec">Durée du test (secondes)</label>
+          <input class="input" id="dureeSec" name="dureeSec" type="number" min="1" [(ngModel)]="form.dureeSec" placeholder="Ex. 10" />
+        </div>
+      } @else {
+        <div>
+          <label class="label" for="nombreRequetes">Nombre de requêtes</label>
+          <input class="input" id="nombreRequetes" name="nombreRequetes" type="number" min="1" [(ngModel)]="form.nombreRequetes" placeholder="Ex. 100" />
+        </div>
+      }
+
+      <div class="span-2">
+        <label class="label" for="jsonBody">Payload / Corps de la requête (JSON)</label>
+        <textarea class="input mono" id="jsonBody" name="jsonBody" rows="4" [(ngModel)]="form.jsonBody" placeholder='{
   "compteSource": "ACC-001",
   "montant": 150.0
 }'></textarea>
@@ -70,12 +102,18 @@
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ editingId() !== null ? 'Enregistrer les modifications' : 'Enregistrer le scénario' }}</button>
     </div>
-  </form>
+    </form>
+  </div>
+</div>
+}
+
+@if (runError()) {
+  <div class="card run-error">{{ runError() }}</div>
 }
 
 <div class="scenario-list">
   @for (scenario of scenarios(); track scenario.id) {
-    <div class="card scenario-card">
+    <div class="card scenario-card" (click)="openDetails(scenario)">
       <div class="scenario-main">
         <div class="scenario-title-row">
           <strong>{{ scenario.nom }}</strong>
@@ -83,33 +121,46 @@
         </div>
         <p class="scenario-desc">{{ scenario.endpoint }}</p>
         <div class="scenario-meta">
-          <span>Code attendu : {{ scenario.codeAttendu }}</span>
+          <span>Code attendu : {{ scenario.expectedCode }}</span>
           <span>Seuil : {{ scenario.seuilMs }} ms</span>
-          <span>VUs : {{ scenario.vus ?? 0 }}</span>
+          <span>Taux d’erreur max : {{ scenario.tauxErreurMax ?? 0 }}%</span>
+          <span>Timeout : {{ scenario.timeoutMs ?? 0 }} ms</span>
+          <span>VUs : {{ scenario.vus ?? 1 }}</span>
+          @if (scenario.executionMode === 'REQUETES') {
+            <span>Requêtes : {{ scenario.nombreRequetes ?? 100 }}</span>
+          } @else {
+            <span>Durée : {{ scenario.dureeSec ?? 10 }}s</span>
+          }
         </div>
         <p class="scenario-assertions">{{ scenario.assertions }}</p>
         @if (runningId() === scenario.id) {
           <div class="progress-block">
             <div class="progress-meta">
               <span>{{ progressLabel() }}</span>
-              <strong>{{ progress() }}%</strong>
+              @if (!progressIndeterminate()) {
+                <strong>{{ progress() }}%</strong>
+              }
             </div>
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="progress()"></div>
+            <div class="progress-bar" [class.indeterminate]="progressIndeterminate()">
+              @if (progressIndeterminate()) {
+                <div class="progress-fill-indeterminate"></div>
+              } @else {
+                <div class="progress-fill" [class.estimate]="progressIsEstimate()" [style.width.%]="progress()"></div>
+              }
             </div>
           </div>
         }
       </div>
       <div class="scenario-actions">
-        <button class="action-btn action-btn-run" (click)="runScenario(scenario)" [disabled]="runningId() === scenario.id">
+        <button class="action-btn action-btn-run" (click)="runScenario(scenario, $event)" [disabled]="runningId() === scenario.id">
           <span class="action-icon">▶️</span>
           <span class="action-label">{{ runningId() === scenario.id ? 'Exécution…' : 'Exécuter' }}</span>
         </button>
-        <button class="action-btn action-btn-edit" (click)="editScenario(scenario)">
+        <button class="action-btn action-btn-edit" (click)="editScenario(scenario); $event.stopPropagation()">
           <span class="action-icon">✏️</span>
           <span class="action-label">Modifier</span>
         </button>
-        <button class="action-btn action-btn-delete" (click)="deleteScenario(scenario)">
+        <button class="action-btn action-btn-delete" (click)="deleteScenario(scenario); $event.stopPropagation()">
           <span class="action-icon">🗑️</span>
           <span class="action-label">Supprimer</span>
         </button>
@@ -119,3 +170,13 @@
     <div class="card empty-state">Aucun scénario pour le moment. Créez-en un pour démarrer.</div>
   }
 </div>
+
+@if (showDetails() && selectedScenario()) {
+  <app-execution-details-overlay
+    [testCaseId]="selectedScenario()!.id"
+    [testCaseNom]="selectedScenario()!.nom"
+    [seuilMs]="selectedScenario()!.seuilMs"
+    [tauxErreurMax]="selectedScenario()!.tauxErreurMax"
+    (closed)="closeDetails()">
+  </app-execution-details-overlay>
+}

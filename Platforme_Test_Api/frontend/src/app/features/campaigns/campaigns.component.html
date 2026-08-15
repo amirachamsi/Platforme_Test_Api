@@ -1,76 +1,189 @@
 <div class="page-header">
   <div>
-    <h1>Campagnes de test</h1>
-    <p class="subtitle">Choisissez plusieurs scénarios de test et un endpoint pour préparer une campagne d’exécution.</p>
+    <h1>Campagnes</h1>
+    <p class="subtitle">Regroupez plusieurs scénarios pour les exécuter ensemble, en parallèle ou dans un ordre précis.</p>
   </div>
-  <button class="btn btn-primary" (click)="toggleForm()">
-    {{ showForm() ? 'Fermer' : 'Nouvelle campagne' }}
-  </button>
+  <button class="btn btn-primary" (click)="openForm()">Nouvelle campagne</button>
 </div>
 
+@if (error()) {
+  <div class="card run-error">{{ error() }}</div>
+}
+@if (launchError()) {
+  <div class="card run-error">{{ launchError() }}</div>
+}
+
 @if (showForm()) {
-  <form class="card form-card" (ngSubmit)="submit()">
+<div class="form-overlay-backdrop" (click)="closeForm()">
+  <div class="form-overlay-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ editingId() !== null ? 'Modifier la campagne' : 'Nouvelle campagne' }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeForm()">✕</button>
+    </div>
+    <form (ngSubmit)="submit()">
     <div class="form-grid">
       <div class="span-2">
         <label class="label" for="nom">Nom de la campagne</label>
-        <input class="input" id="nom" name="nom" [(ngModel)]="form.nom" required placeholder="Ex. Validation du flux de paiement" />
+        <input class="input" id="nom" name="nom" [(ngModel)]="form.nom" required placeholder="Ex. Suite de régression API paiement" />
       </div>
 
       <div class="span-2">
-        <label class="label" for="endpoint">Endpoint ciblé</label>
-        <select class="input" id="endpoint" name="endpoint" [(ngModel)]="form.endpointId">
-          <option value="">Sélectionnez un endpoint</option>
-          @for (endpoint of endpoints; track endpoint.id) {
-            <option [value]="endpoint.id">{{ endpoint.nom }} • {{ endpoint.methode }} {{ endpoint.chemin }}</option>
-          }
-        </select>
+        <label class="label" for="description">Description</label>
+        <textarea class="input" id="description" name="description" rows="2" [(ngModel)]="form.description" placeholder="Objectif de cette campagne"></textarea>
       </div>
 
       <div class="span-2">
-        <label class="label">Scénarios à exécuter</label>
-        <div class="scenario-selector">
-          @for (scenario of availableScenarios; track scenario.id) {
-            <label class="scenario-option">
-              <input type="checkbox" [checked]="isSelected(scenario.id)" (change)="toggleScenario(scenario.id)" />
-              <span class="scenario-option-content">
-                <strong>{{ scenario.nom }}</strong>
-                <span>{{ scenario.endpoint }}</span>
-              </span>
-            </label>
-          }
+        <label class="label">Mode d'exécution</label>
+        <div class="mode-toggle">
+          <button type="button" class="mode-btn" [class.active]="form.mode === 'PARALLELE'" (click)="form.mode = 'PARALLELE'">En parallèle</button>
+          <button type="button" class="mode-btn" [class.active]="form.mode === 'SEQUENTIELLE'" (click)="form.mode = 'SEQUENTIELLE'">En file (ordre choisi)</button>
         </div>
+      </div>
+
+      <div class="span-2">
+        <label class="label" for="search">Ajouter des cas de test</label>
+        <input class="input" id="search" name="search" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Rechercher par nom…" />
+        @if (searchResults.length > 0) {
+          <div class="search-results">
+            @for (result of searchResults; track result.id) {
+              <button type="button" class="search-result-item" (click)="addTestCase(result)">
+                <span>{{ result.nom }}</span>
+                <span class="search-result-add">+ Ajouter</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="span-2">
+        <label class="label">
+          Cas de test sélectionnés ({{ form.selectedTestCases.length }})
+          @if (form.mode === 'SEQUENTIELLE' && form.selectedTestCases.length > 1) {
+            <span class="drag-hint">— glissez pour réordonner</span>
+          }
+        </label>
+        @if (form.selectedTestCases.length === 0) {
+          <p class="empty-hint">Aucun cas de test sélectionné. Utilisez la recherche ci-dessus.</p>
+        } @else {
+          <div class="selected-list" cdkDropList [cdkDropListDisabled]="form.mode !== 'SEQUENTIELLE'" (cdkDropListDropped)="onReorder($event)">
+            @for (tc of form.selectedTestCases; track tc.id; let i = $index) {
+              <div class="selected-item" [class.draggable]="form.mode === 'SEQUENTIELLE'" cdkDrag [cdkDragDisabled]="form.mode !== 'SEQUENTIELLE'">
+                @if (form.mode === 'SEQUENTIELLE') {
+                  <span class="drag-handle" cdkDragHandle>⋮⋮</span>
+                  <span class="selected-order">{{ i + 1 }}</span>
+                }
+                <span class="selected-name">{{ tc.nom }}</span>
+                <button type="button" class="selected-remove" (click)="removeTestCase(tc)">✕</button>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
 
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit" [disabled]="!form.nom || !form.endpointId || selectedScenarioIds().length === 0">Créer la campagne</button>
+      <button class="btn btn-primary" type="submit" [disabled]="saving()">
+        {{ editingId() !== null ? 'Enregistrer les modifications' : 'Créer la campagne' }}
+      </button>
     </div>
-  </form>
+    </form>
+  </div>
+</div>
 }
 
 <div class="campaign-list">
   @for (campaign of campaigns(); track campaign.id) {
     <div class="card campaign-card">
-      <div class="campaign-main">
-        <div class="campaign-title-row">
-          <strong>{{ campaign.nom }}</strong>
-          <span class="status-chip">{{ campaign.scenarios.length }} scénario(s)</span>
+      <div class="campaign-summary" (click)="toggleExpand(campaign)">
+        <div class="campaign-main">
+          <div class="campaign-title-row">
+            <strong>{{ campaign.nom }}</strong>
+            <span class="mode-chip">{{ campaign.mode === 'SEQUENTIELLE' ? 'En file' : 'En parallèle' }}</span>
+          </div>
+          @if (campaign.description) {
+            <p class="campaign-desc">{{ campaign.description }}</p>
+          }
+          <div class="campaign-meta">
+            <span>{{ (campaign.testCases ?? []).length }} scénario(s)</span>
+            @if (campaign.lastLaunchedAt) {
+              <span>Dernier lancement : {{ campaign.lastLaunchedAt | date:'short' }}</span>
+            } @else {
+              <span>Jamais lancée</span>
+            }
+          </div>
         </div>
-        <p class="campaign-desc">Endpoint : {{ campaign.endpoint }}</p>
-        <div class="campaign-meta">
-          <span>Créée le {{ campaign.createdAt }}</span>
+        <div class="campaign-actions">
+          <button class="action-btn action-btn-run" (click)="launchCampaign(campaign, $event)" [disabled]="launchingCampaignId() === campaign.id">
+            <span class="action-icon">▶️</span>
+            <span class="action-label">{{ launchingCampaignId() === campaign.id ? 'Lancement…' : 'Lancer' }}</span>
+          </button>
+          <button class="action-btn action-btn-edit" (click)="editCampaign(campaign, $event)">
+            <span class="action-icon">✏️</span>
+            <span class="action-label">Modifier</span>
+          </button>
+          <button class="action-btn action-btn-delete" (click)="deleteCampaign(campaign, $event)">
+            <span class="action-icon">🗑️</span>
+            <span class="action-label">Supprimer</span>
+          </button>
         </div>
-        <div class="campaign-scenarios">
-          @for (scenario of campaign.scenarios; track scenario.id) {
-            <span class="scenario-chip">{{ scenario.nom }}</span>
+      </div>
+
+      @if (expandedCampaignId() === campaign.id) {
+        <div class="campaign-testcases">
+          @for (ref of orderedRefs(campaign); track ref.testcase.id) {
+            <div class="campaign-testcase-row" (click)="openOverlay(ref.testcase, $event)">
+              <div class="campaign-testcase-header">
+                @if (campaign.mode === 'SEQUENTIELLE') {
+                  <span class="selected-order">{{ ref.ordre + 1 }}</span>
+                }
+                <span class="campaign-testcase-name">{{ ref.testcase.nom }}</span>
+                <span class="status-chip">{{ getTestTypeLabel(ref.testcase.typeStatus) }}</span>
+                @if (!testProgress().has(ref.testcase.id!)) {
+                  <span class="campaign-testcase-hint">Voir les résultats</span>
+                }
+              </div>
+
+              <div class="campaign-testcase-meta">
+                <span>{{ endpointLabel(ref.testcase) }}</span>
+                <span>Code attendu : {{ ref.testcase.expectedCode ?? '—' }}</span>
+                <span>Seuil : {{ ref.testcase.seuilMs ?? '—' }} ms</span>
+                <span>Taux d'erreur max : {{ ref.testcase.tauxErreurMax ?? 0 }}%</span>
+                <span>VUs : {{ ref.testcase.vus ?? 1 }}</span>
+                @if (ref.testcase.executionMode === 'REQUETES') {
+                  <span>Requêtes : {{ ref.testcase.nombreRequetes ?? 100 }}</span>
+                } @else {
+                  <span>Durée : {{ ref.testcase.dureeSec ?? 10 }}s</span>
+                }
+              </div>
+
+              @if (testProgress().has(ref.testcase.id!)) {
+                <div class="inline-progress">
+                  <div class="progress-bar" [class.indeterminate]="testProgress().get(ref.testcase.id!)!.indeterminate">
+                    @if (testProgress().get(ref.testcase.id!)!.indeterminate) {
+                      <div class="progress-fill-indeterminate"></div>
+                    } @else {
+                      <div class="progress-fill" [class.estimate]="testProgress().get(ref.testcase.id!)!.isEstimate" [style.width.%]="testProgress().get(ref.testcase.id!)!.progress"></div>
+                    }
+                  </div>
+                  <span class="inline-progress-label">{{ testProgress().get(ref.testcase.id!)!.label }}</span>
+                </div>
+              }
+            </div>
           }
         </div>
-      </div>
-      <div class="campaign-actions">
-        <button class="btn btn-ghost" (click)="deleteCampaign(campaign)">Supprimer</button>
-      </div>
+      }
     </div>
   } @empty {
-    <div class="card empty-state">Aucune campagne pour le moment. Créez-en une pour regrouper plusieurs scénarios.</div>
+    <div class="card empty-state">Aucune campagne pour le moment. Créez-en une pour démarrer.</div>
   }
 </div>
+
+@if (showOverlay() && overlayTestCase()) {
+  <app-execution-details-overlay
+    [testCaseId]="overlayTestCase()!.id!"
+    [testCaseNom]="overlayTestCase()!.nom"
+    [seuilMs]="overlayTestCase()!.seuilMs"
+    [tauxErreurMax]="overlayTestCase()!.tauxErreurMax"
+    (closed)="closeOverlay()">
+  </app-execution-details-overlay>
+}

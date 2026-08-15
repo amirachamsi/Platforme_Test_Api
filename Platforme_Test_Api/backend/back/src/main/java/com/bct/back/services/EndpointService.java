@@ -2,6 +2,8 @@ package com.bct.back.services;
 
 import com.bct.back.entities.Endpoint;
 import com.bct.back.entities.ApiTarget;
+import com.bct.back.enums.AuthType;
+import com.bct.back.enums.KeyLocation;
 import com.bct.back.repositories.EndpointRepository;
 import com.bct.back.repositories.ApiTargetRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,16 +11,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.bct.back.entities.PingResult;
+import com.bct.back.repositories.PingResultRepository;
+import java.time.LocalDateTime;
 
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class EndpointService {
-
     private final EndpointRepository apiEndpointRepository;
     private final ApiTargetRepository apiTargetRepository;
+    private final PingResultRepository pingResultRepository;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
     @Transactional(readOnly = true)
     public List<Endpoint> findAll() {
@@ -85,4 +99,63 @@ public class EndpointService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Cible API introuvable, id=" + targetRef.getId()));
     }
+
+    public void ping(Long epid) {
+        Endpoint ep = apiEndpointRepository.findById(epid).orElseThrow();
+        ApiTarget target = ep.getTarget();
+        LocalDateTime pingedAt = LocalDateTime.now();
+
+        try {
+            String url = ep.getTarget().getUrlBase();
+            HttpRequest.Builder requestBuilder;
+
+            if (target.getAuthType() == AuthType.API_KEY
+                    && target.getKeyIn() == KeyLocation.QUERY
+                    && target.getKeyName() != null && target.getSecretRef() != null) {
+                String separator = url.contains("?") ? "&" : "?";
+                url = url + separator + target.getKeyName() + "=" + target.getSecretRef();
+            }
+
+            requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(10))
+                    .GET();
+
+            if (target.getAuthType() == AuthType.BEARER && target.getSecretRef() != null) {
+                requestBuilder.header("Authorization", "Bearer " + target.getSecretRef());
+            } else if (target.getAuthType() == AuthType.API_KEY
+                    && target.getKeyIn() == KeyLocation.HEADER
+                    && target.getKeyName() != null && target.getSecretRef() != null) {
+                requestBuilder.header(target.getKeyName(), target.getSecretRef());
+            }
+
+            HttpResponse<Void> response = httpClient.send(requestBuilder.build(),
+                    HttpResponse.BodyHandlers.discarding());
+
+            boolean ok = response.statusCode() == 200 || response.statusCode() == 201;
+            ep.setStatus(ok);
+            apiEndpointRepository.save(ep);
+
+            pingResultRepository.save(PingResult.builder()
+                    .endpoint(ep)
+                    .pingedAt(pingedAt)
+                    .success(ok)
+                    .statusCode(response.statusCode())
+                    .message(ok ? "OK" : "Code de réponse inattendu")
+                    .build());
+
+        } catch (Exception e) {
+            ep.setStatus(false);
+            apiEndpointRepository.save(ep);
+
+            pingResultRepository.save(PingResult.builder()
+                    .endpoint(ep)
+                    .pingedAt(pingedAt)
+                    .success(false)
+                    .statusCode(null)
+                    .message(e.getClass().getSimpleName() + ": " + e.getMessage())
+                    .build());
+        }
+    }
+
 }

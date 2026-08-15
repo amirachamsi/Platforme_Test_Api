@@ -22,15 +22,15 @@
         <div class="avatar">{{ (auth.currentUser() ?? '?').charAt(0).toUpperCase() }}</div>
         <div class="user-info">
           <div class="user-line">
-            <strong>{{ auth.currentUser() }}</strong>
+            <strong [title]="auth.currentUser() ?? ''">{{ auth.currentUser() }}</strong>
             <button class="btn btn-ghost profile-button" type="button" (click)="openProfile()" aria-label="Profil">
-              <span class="icon">⚙️</span>
+              <span class="icon" aria-hidden="true">⚙️</span>
             </button>
           </div>
-          <span>Administrateur</span>
+          <span class="user-role">Administrateur</span>
         </div>
       </div>
-      <button class="btn btn-ghost" (click)="auth.logout()">Se déconnecter</button>
+      <button class="btn btn-ghost logout-button" type="button" (click)="auth.logout()">Se déconnecter</button>
     </div>
   </aside>
 
