@@ -1,0 +1,34 @@
+<div class="login-page">
+  <div class="login-visual">
+    <img src="assets/brand/calligraphie.png" alt="" class="watermark" aria-hidden="true" />
+    <div class="visual-copy">
+      <span class="eyebrow">Banque Centrale de Tunisie</span>
+      <h1>Plateforme intelligente de test<br>et de supervision des API bancaires</h1>
+      <p>Centralisez la configuration des cibles, l'exécution des testcases<br>et l'analyse de la performance et de la résilience de vos API.</p>
+    </div>
+  </div>
+
+  <div class="login-panel">
+    <form class="login-card card" (ngSubmit)="submit()">
+      <img src="assets/brand/logo.png" alt="BCT" class="login-logo" />
+      <h2>Connexion administrateur</h2>
+      <p class="subtitle">Accès réservé à l'administrateur de la plateforme.</p>
+
+      <label class="label" for="email">Identifiant ou e-mail</label>
+      <input class="input" id="email" name="email" type="text"
+             [(ngModel)]="email" autocomplete="username" required />
+
+      <label class="label" for="password">Mot de passe</label>
+      <input class="input" id="password" name="password" type="password"
+             [(ngModel)]="password" autocomplete="current-password" required />
+
+      @if (error()) {
+        <div class="error-banner">{{ error() }}</div>
+      }
+
+      <button class="btn btn-primary submit-btn" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Connexion…' : 'Se connecter' }}
+      </button>
+    </form>
+  </div>
+</div>

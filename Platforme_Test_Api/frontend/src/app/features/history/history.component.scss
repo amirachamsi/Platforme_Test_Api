@@ -1,0 +1,209 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.page-header h1 { font-size: 22px; margin-bottom: 4px; }
+.subtitle { color: var(--bct-ink-soft); font-size: 14px; margin: 0; }
+
+.tab-bar {
+  display: inline-flex;
+  border: 1px solid rgba(13, 36, 71, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.tab-btn {
+  border: none;
+  background: #fff;
+  color: var(--bct-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.tab-btn:not(:last-child) { border-right: 1px solid rgba(13, 36, 71, 0.15); }
+.tab-btn.active { background: var(--bct-navy); color: #fff; }
+.tab-btn:hover:not(.active) { background: rgba(13, 36, 71, 0.05); }
+
+.controls-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.search-input {
+  flex: 1;
+  max-width: 360px;
+}
+.sort-btn {
+  border: 1px solid rgba(13, 36, 71, 0.15);
+  background: #fff;
+  color: var(--bct-navy);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+.sort-btn:hover { background: rgba(13, 36, 71, 0.05); }
+
+.loading-text { color: var(--bct-ink-soft); font-size: 13px; padding: 20px 0; }
+.empty-state { padding: 32px; text-align: center; color: var(--bct-ink-soft); }
+
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+
+.history-row {
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.history-row.clickable { cursor: pointer; transition: box-shadow 0.15s ease; }
+.history-row.clickable:hover { box-shadow: 0 4px 14px rgba(13, 36, 71, 0.12); }
+
+/* Used only by campaign launch rows, which need a header sub-section plus an
+   expandable panel below — cancels the card's own padding so this can span
+   full-bleed (for the hover background), then reapplies the same spacing. */
+.history-row-clickable {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  margin: -14px -20px;
+  padding: 14px 20px;
+}
+.history-row-clickable:hover { background: rgba(13, 36, 71, 0.03); }
+
+.history-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.history-row-main strong { flex: 1; font-size: 14px; color: var(--bct-navy); }
+
+.history-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--bct-ink-soft);
+}
+
+.ping-message {
+  color: var(--bct-danger);
+}
+
+.mode-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(43, 91, 180, 0.12);
+  color: var(--bct-navy);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(13, 36, 71, 0.08);
+  color: var(--bct-navy);
+}
+.status-chip.status-pass { background: rgba(30, 166, 114, 0.14); color: #0f7a4a; }
+.status-chip.status-partial { background: rgba(217, 155, 21, 0.14); color: #a06a0a; }
+.status-chip.status-fail { background: rgba(212, 63, 63, 0.12); color: var(--bct-danger); }
+
+.pdf-btn {
+  border: 1px solid rgba(13, 36, 71, 0.18);
+  background: #fff;
+  color: var(--bct-navy);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+}
+.pdf-btn:hover:not(:disabled) {
+  background: rgba(13, 36, 71, 0.06);
+  border-color: rgba(13, 36, 71, 0.3);
+}
+.pdf-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.target-chip {
+  color: var(--bct-navy);
+  font-weight: 600;
+}
+
+.expand-hint {
+  margin-left: auto;
+  color: var(--bct-navy);
+  font-weight: 600;
+}
+
+.expanded-campaign {
+  border-top: 1px solid rgba(13, 36, 71, 0.08);
+  margin: 0 -20px -14px;
+  padding: 10px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.expanded-note {
+  font-size: 11px;
+  color: var(--bct-ink-soft);
+  margin: 0 0 6px;
+  font-style: italic;
+}
+
+.campaign-testcase-row {
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.campaign-testcase-row:hover { background: rgba(13, 36, 71, 0.04); }
+.campaign-testcase-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.campaign-testcase-name { font-size: 13px; color: var(--bct-navy); font-weight: 600; }
+.campaign-testcase-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--bct-ink-soft);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.campaign-testcase-row:hover .campaign-testcase-hint { opacity: 1; }
+.selected-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bct-navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
