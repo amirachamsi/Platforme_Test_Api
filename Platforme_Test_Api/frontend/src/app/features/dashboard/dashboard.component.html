@@ -7,16 +7,25 @@
 
 <section class="overview-strip">
   <a routerLink="/scenarios-de-test" class="card overview-stat">
-    <span class="overview-value">{{ scenarioCount() ?? '—' }}</span>
-    <span class="overview-label">Scénarios</span>
+    <span class="overview-copy">
+      <span class="overview-label">Scénarios</span>
+      <span class="overview-value">{{ scenarioCount() ?? '—' }}</span>
+    </span>
+    <span class="overview-arrow" aria-hidden="true">→</span>
   </a>
   <a routerLink="/campagnes" class="card overview-stat">
-    <span class="overview-value">{{ campaignCount() ?? '—' }}</span>
-    <span class="overview-label">Campagnes</span>
+    <span class="overview-copy">
+      <span class="overview-label">Campagnes</span>
+      <span class="overview-value">{{ campaignCount() ?? '—' }}</span>
+    </span>
+    <span class="overview-arrow" aria-hidden="true">→</span>
   </a>
   <a routerLink="/cibles" class="card overview-stat">
-    <span class="overview-value">{{ targetCount() ?? '—' }}</span>
-    <span class="overview-label">Cibles API</span>
+    <span class="overview-copy">
+      <span class="overview-label">Cibles API</span>
+      <span class="overview-value">{{ targetCount() ?? '—' }}</span>
+    </span>
+    <span class="overview-arrow" aria-hidden="true">→</span>
   </a>
 </section>
 
