@@ -34,8 +34,12 @@
         <label class="label" for="endpoint">Endpoint</label>
         <select class="input" id="endpoint" name="endpoint" [(ngModel)]="form.endpointId">
           <option value="">Sélectionnez un endpoint</option>
-          @for (endpoint of endpoints; track endpoint.id) {
-            <option [value]="endpoint.id">{{ endpoint.nom }} • {{ endpoint.methode }} {{ endpoint.chemin }}</option>
+          @for (group of groupedEndpoints; track group.targetId) {
+            <optgroup [label]="group.label">
+              @for (endpoint of group.endpoints; track endpoint.id) {
+                <option [value]="endpoint.id">{{ endpoint.methode }} {{ endpoint.chemin }} — {{ endpoint.nom }}</option>
+              }
+            </optgroup>
           }
         </select>
       </div>
@@ -85,6 +89,7 @@
         </div>
       }
 
+      @if (showBodyField) {
       <div class="span-2">
         <label class="label" for="jsonBody">Payload / Corps de la requête (JSON)</label>
         <textarea class="input mono" id="jsonBody" name="jsonBody" rows="4" [(ngModel)]="form.jsonBody" placeholder='{
@@ -92,6 +97,7 @@
   "montant": 150.0
 }'></textarea>
       </div>
+      }
 
       <div class="span-2">
         <label class="label" for="assertions">Assertions</label>

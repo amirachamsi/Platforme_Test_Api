@@ -100,6 +100,14 @@ public class EndpointService {
                         HttpStatus.NOT_FOUND, "Cible API introuvable, id=" + targetRef.getId()));
     }
 
+// Add to EndpointService's constructor-injected fields:
+//     private final PingResultRepository pingResultRepository;
+//
+// Add imports:
+//     import com.bct.back.entities.PingResult;
+//     import com.bct.back.repositories.PingResultRepository;
+//     import java.time.LocalDateTime;
+
     public void ping(Long epid) {
         Endpoint ep = apiEndpointRepository.findById(epid).orElseThrow();
         ApiTarget target = ep.getTarget();
@@ -132,7 +140,16 @@ public class EndpointService {
             HttpResponse<Void> response = httpClient.send(requestBuilder.build(),
                     HttpResponse.BodyHandlers.discarding());
 
-            boolean ok = response.statusCode() == 200 || response.statusCode() == 201;
+            // Was hardcoded to `statusCode == 200 || 201`. codeAttendu is the same field
+            // TestCase execution already compares against — using it here too means
+            // "active/inactive" actually reflects whether this endpoint is behaving as
+            // configured, not just "responded to something." No expected code configured
+            // yet ⇒ fall back to the old default so existing endpoints don't all flip
+            // to "inactive" the moment this deploys.
+            Integer expectedCode = ep.getCodeAttendu();
+            boolean ok = expectedCode != null
+                    ? response.statusCode() == expectedCode
+                    : (response.statusCode() == 200 || response.statusCode() == 201);
             ep.setStatus(ok);
             apiEndpointRepository.save(ep);
 
@@ -141,7 +158,11 @@ public class EndpointService {
                     .pingedAt(pingedAt)
                     .success(ok)
                     .statusCode(response.statusCode())
-                    .message(ok ? "OK" : "Code de réponse inattendu")
+                    .message(ok
+                            ? "OK"
+                            : expectedCode != null
+                            ? "Code inattendu : reçu " + response.statusCode() + ", attendu " + expectedCode
+                            : "Code de réponse inattendu")
                     .build());
 
         } catch (Exception e) {

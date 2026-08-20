@@ -369,13 +369,12 @@
           </select>
         </div>
 
+        @if (isBodySupported()) {
         <div class="span-2">
           <label class="label" for="body">Body (Corps de la requête)</label>
-          <textarea class="input mono" id="body" name="body" rows="4" [(ngModel)]="endpointForm.body" [disabled]="endpointForm.methode === 'GET'" placeholder='Ex. { "compteSource": "ACC-001", "montant": 150.0 }'></textarea>
-          @if (endpointForm.methode === 'GET') {
-            <small>Le body est désactivé pour les requêtes GET.</small>
-          }
+          <textarea class="input mono" id="body" name="body" rows="4" [(ngModel)]="endpointForm.body" placeholder='Ex. { "compteSource": "ACC-001", "montant": 150.0 }'></textarea>
         </div>
+        }
 
         <div>
           <label class="label" for="codeAttendu">Code HTTP attendu</label>

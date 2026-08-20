@@ -14,18 +14,35 @@
   margin-bottom: 16px;
 }
 .overview-stat {
+  position: relative;
   padding: 14px 18px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   text-decoration: none;
+  cursor: pointer;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 .overview-stat:hover {
   box-shadow: 0 6px 16px rgba(13, 36, 71, 0.12);
   transform: translateY(-1px);
 }
-.overview-value { font-size: 22px; font-weight: 700; color: var(--bct-navy); }
+.overview-arrow {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--bct-ink-soft);
+  opacity: 0.55;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.overview-stat:hover .overview-arrow {
+  opacity: 1;
+  color: var(--bct-navy);
+  transform: translateX(2px);
+}
+.overview-value { font-size: 22px; font-weight: 700; color: var(--bct-navy); padding-right: 20px; }
 .overview-label { font-size: 12px; color: var(--bct-ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
 
 .kpi-grid {

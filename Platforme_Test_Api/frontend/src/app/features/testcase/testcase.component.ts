@@ -327,6 +327,35 @@ export class TestcaseComponent implements OnInit {
     };
   }
 
+  /** GET/DELETE endpoints have no meaningful request body — hides the field entirely
+   * rather than just disabling it, once an endpoint is actually selected. */
+  get showBodyField(): boolean {
+    const methode = this.selectedEndpointMethod;
+    return methode !== 'GET' && methode !== 'DELETE';
+  }
+
+  private get selectedEndpointMethod(): string | null {
+    const id = Number(this.form.endpointId);
+    if (!id) return null;
+    return this.endpoints.find((e) => e.id === id)?.methode ?? null;
+  }
+
+  /** Groups endpoints by their target (name + base URL) so the dropdown shows
+   * which API each endpoint belongs to, instead of a flat unlabeled list. */
+  get groupedEndpoints(): { targetId: number; label: string; endpoints: ApiEndpoint[] }[] {
+    const groups = new Map<number, { targetId: number; label: string; endpoints: ApiEndpoint[] }>();
+    for (const ep of this.endpoints) {
+      const target = ep.target as any;
+      const targetId = target?.id ?? 0;
+      const label = target?.nom ? `${target.nom} — ${target.urlBase ?? ''}` : 'Cible inconnue';
+      if (!groups.has(targetId)) {
+        groups.set(targetId, { targetId, label, endpoints: [] });
+      }
+      groups.get(targetId)!.endpoints.push(ep);
+    }
+    return Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   private toApiTestType(value: string): typeStatus {
     switch (value) {
       case 'charge': return 'CHARGE';

@@ -3,18 +3,22 @@
     <h1>Tableau de bord</h1>
     <p class="subtitle">Vue d'ensemble des testcases exécutés sur les endpoints configurés.</p>
   </div>
+  <a routerLink="/scenarios-de-test" class="btn btn-primary">Nouveau testcase</a>
 </div>
 
 <section class="overview-strip">
   <a routerLink="/scenarios-de-test" class="card overview-stat">
+    <span class="overview-arrow">→</span>
     <span class="overview-value">{{ scenarioCount() ?? '—' }}</span>
     <span class="overview-label">Scénarios</span>
   </a>
   <a routerLink="/campagnes" class="card overview-stat">
+    <span class="overview-arrow">→</span>
     <span class="overview-value">{{ campaignCount() ?? '—' }}</span>
     <span class="overview-label">Campagnes</span>
   </a>
   <a routerLink="/cibles" class="card overview-stat">
+    <span class="overview-arrow">→</span>
     <span class="overview-value">{{ targetCount() ?? '—' }}</span>
     <span class="overview-label">Cibles API</span>
   </a>

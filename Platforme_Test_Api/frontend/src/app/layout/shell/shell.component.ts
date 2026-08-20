@@ -13,8 +13,8 @@ export class ShellComponent {
   navItems = [
     { path: 'tableau-de-bord', label: 'Tableau de bord', icon: 'grid' },
     { path: 'cibles', label: 'Cibles & API', icon: 'target' },
-    { path: 'campagnes', label: 'Campagnes', icon: 'play-circle' },
     { path: 'scenarios-de-test', label: 'Scénarios de test', icon: 'check-circle' },
+    { path: 'campagnes', label: 'Campagnes', icon: 'play-circle' },
     { path: 'historique', label: 'Historique', icon: 'clock' },
   ];
 
