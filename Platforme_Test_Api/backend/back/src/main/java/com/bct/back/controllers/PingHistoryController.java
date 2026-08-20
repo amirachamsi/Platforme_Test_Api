@@ -3,9 +3,8 @@ package com.bct.back.controllers;
 import com.bct.back.entities.PingResult;
 import com.bct.back.repositories.PingResultRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,5 +20,20 @@ public class PingHistoryController {
     @GetMapping
     public List<PingResult> history() {
         return pingResultRepository.findAllByOrderByPingedAtDesc();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll() {
+        pingResultRepository.deleteAll();
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        if (!pingResultRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        pingResultRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

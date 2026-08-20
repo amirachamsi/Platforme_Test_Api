@@ -16,7 +16,26 @@
   <button type="button" class="sort-btn" (click)="toggleSortOrder()">
     {{ sortAscending() ? '↑ Plus ancien d’abord' : '↓ Plus récent d’abord' }}
   </button>
+  @if (activeTab() === 'executions') {
+    <button type="button" class="delete-all-btn" (click)="deleteAllExecutions()"
+            [disabled]="executions().length === 0 || deletingAll() || deletingId() !== null">
+      {{ deletingAll() ? 'Suppression…' : 'Supprimer tout' }}
+    </button>
+  }
+  @if (activeTab() === 'pings') {
+    <button type="button" class="delete-all-btn" (click)="deleteAllPings()"
+            [disabled]="pings().length === 0 || deletingAllPings() || deletingPingId() !== null">
+      {{ deletingAllPings() ? 'Suppression…' : 'Supprimer tout' }}
+    </button>
+  }
 </div>
+
+@if (activeTab() === 'executions' && executionDeleteError()) {
+  <p class="delete-error" role="alert">{{ executionDeleteError() }}</p>
+}
+@if (activeTab() === 'pings' && pingDeleteError()) {
+  <p class="delete-error" role="alert">{{ pingDeleteError() }}</p>
+}
 
 @if (activeTab() === 'campagnes') {
   @if (loadingCampaigns()) {
@@ -88,9 +107,14 @@
             </span>
             @if (execution.id) {
               <button type="button" class="pdf-btn" (click)="downloadExecutionReport(execution, $event)"
-                      [disabled]="downloadingId() === execution.id"
+                      [disabled]="downloadingId() === execution.id || deletingAll()"
                       title="Ouvrir le rapport HTML">
                 {{ downloadingId() === execution.id ? '…' : 'Rapport' }}
+              </button>
+              <button type="button" class="delete-btn" (click)="deleteExecution(execution, $event)"
+                      [disabled]="deletingId() === execution.id || deletingAll()"
+                      title="Supprimer cette exécution">
+                {{ deletingId() === execution.id ? 'Suppression…' : 'Supprimer' }}
               </button>
             }
           </div>
@@ -120,6 +144,13 @@
             <span class="status-chip" [class.status-pass]="ping.success" [class.status-fail]="!ping.success">
               {{ ping.success ? 'OK' : 'Échec' }}
             </span>
+            @if (ping.id) {
+              <button type="button" class="delete-btn" (click)="deletePing(ping)"
+                      [disabled]="deletingPingId() === ping.id || deletingAllPings()"
+                      title="Supprimer ce ping">
+                {{ deletingPingId() === ping.id ? 'Suppression…' : 'Supprimer' }}
+              </button>
+            }
           </div>
           <div class="history-row-meta">
             @if (ping.endpoint) {

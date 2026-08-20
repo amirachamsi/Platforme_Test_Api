@@ -146,4 +146,10 @@ public class ExecutionService {
         }
         return endpointDefault != null ? endpointDefault : 200;
     }
+    public void deleteExecution(Execution execution) {
+        executionRepository.delete(execution);
+    }
+    public void deleteAllExecution() {
+        executionRepository.deleteAll();
+    }
 }

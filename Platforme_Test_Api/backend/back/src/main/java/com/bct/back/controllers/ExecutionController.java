@@ -63,4 +63,18 @@ public class ExecutionController {
                 .contentLength(html.length)
                 .body(html);
     }
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!executionRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        executionRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/delete/all")
+    public ResponseEntity<Void> deleteAll() {
+        executionRepository.deleteAll();
+        return ResponseEntity.noContent().build();
+    }
 }

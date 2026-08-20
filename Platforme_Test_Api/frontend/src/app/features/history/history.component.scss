@@ -51,6 +51,26 @@
 }
 .sort-btn:hover { background: rgba(13, 36, 71, 0.05); }
 
+.delete-all-btn,
+.delete-btn {
+  border: 1px solid rgba(212, 63, 63, 0.35);
+  background: #fff;
+  color: var(--bct-danger);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.delete-all-btn { padding: 0 14px; font-size: 12px; border-radius: 8px; }
+.delete-all-btn:hover:not(:disabled),
+.delete-btn:hover:not(:disabled) { background: rgba(212, 63, 63, 0.08); border-color: var(--bct-danger); }
+.delete-all-btn:disabled,
+.delete-btn:disabled { opacity: 0.6; cursor: default; }
+.delete-error { margin: -8px 0 16px; color: var(--bct-danger); font-size: 12px; }
+
 .loading-text { color: var(--bct-ink-soft); font-size: 13px; padding: 20px 0; }
 .empty-state { padding: 32px; text-align: center; color: var(--bct-ink-soft); }
 

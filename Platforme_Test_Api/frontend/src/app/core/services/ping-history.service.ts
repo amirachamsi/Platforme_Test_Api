@@ -13,4 +13,14 @@ export class PingHistoryService {
   getAll(): Observable<PingResult[]> {
     return this.http.get<PingResult[]>(this.baseUrl);
   }
+
+  /** Deletes one saved ping from the backend history. */
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  /** Deletes the complete ping history from the backend. */
+  deleteAll(): Observable<void> {
+    return this.http.delete<void>(this.baseUrl);
+  }
 }

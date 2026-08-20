@@ -28,6 +28,16 @@ export class ExecutionService {
     return this.http.get<Execution[]>(this.baseUrl);
   }
 
+  /** Deletes one saved execution from the backend history. */
+  delete(id: number): Observable<Execution[]> {
+    return this.http.delete<Execution[]>(`${this.baseUrl}/delete/${id}`);
+  }
+
+  /** Deletes the complete execution history from the backend. */
+  deleteAll(): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/delete/all`);
+  }
+
   /**
    * Downloads (or opens) the HTML performance report for an execution.
    * @param openInNewTab when true, opens the report instead of forcing a file download.

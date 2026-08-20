@@ -41,6 +41,12 @@ export class HistoryComponent implements OnInit {
   overlayExecution = signal<Execution | null>(null);
   overlayScenario = signal<TestCase | null>(null);
   downloadingId = signal<number | null>(null);
+  deletingId = signal<number | null>(null);
+  deletingAll = signal(false);
+  executionDeleteError = signal('');
+  deletingPingId = signal<number | null>(null);
+  deletingAllPings = signal(false);
+  pingDeleteError = signal('');
 
   constructor(
     private campaignService: CampaignService,
@@ -121,6 +127,81 @@ export class HistoryComponent implements OnInit {
         next: () => this.downloadingId.set(null),
         error: () => this.downloadingId.set(null),
       });
+  }
+
+  deleteExecution(execution: Execution, event?: Event): void {
+    event?.stopPropagation();
+    if (!execution.id || this.deletingId() !== null || this.deletingAll()) return;
+    if (!window.confirm('Supprimer cette exécution de l’historique ?')) return;
+
+    this.executionDeleteError.set('');
+    this.deletingId.set(execution.id);
+    this.executionService.delete(execution.id).subscribe({
+      next: () => {
+        this.executions.update((executions) => executions.filter((item) => item.id !== execution.id));
+        if (this.overlayExecution()?.id === execution.id) this.closeOverlay();
+        this.deletingId.set(null);
+      },
+      error: () => {
+        this.executionDeleteError.set('Impossible de supprimer cette exécution.');
+        this.deletingId.set(null);
+      },
+    });
+  }
+
+  deleteAllExecutions(): void {
+    if (this.deletingAll() || this.deletingId() !== null || this.executions().length === 0) return;
+    if (!window.confirm('Supprimer définitivement tout l’historique des exécutions ?')) return;
+
+    this.executionDeleteError.set('');
+    this.deletingAll.set(true);
+    this.executionService.deleteAll().subscribe({
+      next: () => {
+        this.executions.set([]);
+        this.closeOverlay();
+        this.deletingAll.set(false);
+      },
+      error: () => {
+        this.executionDeleteError.set('Impossible de supprimer l’historique des exécutions.');
+        this.deletingAll.set(false);
+      },
+    });
+  }
+
+  deletePing(ping: PingResult): void {
+    if (!ping.id || this.deletingPingId() !== null || this.deletingAllPings()) return;
+    if (!window.confirm('Supprimer ce ping de l’historique ?')) return;
+
+    this.pingDeleteError.set('');
+    this.deletingPingId.set(ping.id);
+    this.pingHistoryService.delete(ping.id).subscribe({
+      next: () => {
+        this.pings.update((pings) => pings.filter((item) => item.id !== ping.id));
+        this.deletingPingId.set(null);
+      },
+      error: () => {
+        this.pingDeleteError.set('Impossible de supprimer ce ping.');
+        this.deletingPingId.set(null);
+      },
+    });
+  }
+
+  deleteAllPings(): void {
+    if (this.deletingAllPings() || this.deletingPingId() !== null || this.pings().length === 0) return;
+    if (!window.confirm('Supprimer définitivement tout l’historique des pings ?')) return;
+
+    this.pingDeleteError.set('');
+    this.deletingAllPings.set(true);
+    this.pingHistoryService.deleteAll().subscribe({
+      next: () => {
+        this.pings.set([]);
+        this.deletingAllPings.set(false);
+      },
+      error: () => {
+        this.pingDeleteError.set('Impossible de supprimer l’historique des pings.');
+        this.deletingAllPings.set(false);
+      },
+    });
   }
 
   // --- Expand a campaign launch: fetch the current campaign + its test cases,
