@@ -70,17 +70,20 @@ export class TestcaseComponent implements OnInit {
 
   openForm(): void {
     this.editingId.set(null);
+    this.error.set(null);
     this.form = this.emptyForm();
     this.showForm.set(true);
   }
 
   closeForm(): void {
     this.showForm.set(false);
+    this.error.set(null);
     this.resetForm();
   }
 
   editScenario(scenario: TestcaseItem): void {
     this.editingId.set(scenario.id);
+    this.error.set(null);
     this.form = {
       nom: scenario.nom,
       typeTest: this.getValueKey(scenario.typeTest),
@@ -106,6 +109,12 @@ export class TestcaseComponent implements OnInit {
       return;
     }
 
+    const jsonBody = this.form.jsonBody.trim();
+    if (jsonBody && !this.isValidJson(jsonBody)) {
+      this.error.set('Le corps JSON doit être un JSON valide.');
+      return;
+    }
+
     this.saving.set(true);
     this.error.set(null);
 
@@ -119,7 +128,7 @@ export class TestcaseComponent implements OnInit {
       seuilMs: Number(this.form.seuilMs),
       tauxErreurMax: Number(this.form.tauxErreurMax),
       timeoutMs: Number(this.form.timeoutMs),
-      JSONBody: this.form.jsonBody,
+      JSONBody: jsonBody,
       assertions: this.form.assertions,
       vus: Number(this.form.vus),
       dureeSec: Number(this.form.dureeSec),
@@ -380,6 +389,15 @@ export class TestcaseComponent implements OnInit {
       case 'Sécurité': return 'securite';
       case 'Performance': return 'performance';
       default: return 'fonctionnel';
+    }
+  }
+
+  private isValidJson(value: string): boolean {
+    try {
+      JSON.parse(value);
+      return true;
+    } catch {
+      return false;
     }
   }
 }
