@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExecutionService } from '../../core/services/execution.service';
-import { Execution } from '../../core/models/models';
+import { AiReportService } from '../../core/services/Ai-report.service';
+import { AiReport, Execution } from '../../core/models/models';
 
 @Component({
   selector: 'app-execution-details-overlay',
@@ -30,14 +31,25 @@ export class ExecutionDetailsOverlayComponent implements OnChanges {
   downloadFeedback = signal<string | null>(null);
   downloadLoading = signal(false);
 
-  constructor(private executionService: ExecutionService) {}
+  // --- AI report state ---
+  aiReport = signal<AiReport | null>(null);
+  aiReportVisible = signal(false);
+  aiReportLoading = signal(false);
+  aiReportError = signal<string | null>(null);
+
+  constructor(
+    private executionService: ExecutionService,
+    private aiReportService: AiReportService,
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['execution']) {
       this.selectedExecution.set(this.execution ?? null);
       this.detailsLoading.set(false);
       this.detailsError.set(null);
+      this.resetAiReport();
     } else if (changes['testCaseId'] && this.testCaseId != null) {
+      this.resetAiReport();
       this.loadLatest();
     }
   }
@@ -183,6 +195,129 @@ export class ExecutionDetailsOverlayComponent implements OnChanges {
     } catch {
       return [];
     }
+  }
+
+  // --- AI report ---
+
+  generateAiReport(): void {
+    const execution = this.selectedExecution();
+    if (!execution?.id) return;
+
+    // Already cached client-side from this session — just reveal it.
+    if (this.aiReport()) {
+      this.aiReportVisible.set(true);
+      return;
+    }
+
+    this.aiReportLoading.set(true);
+    this.aiReportError.set(null);
+
+    this.aiReportService.generateOrFetch(execution.id).subscribe({
+      next: (report) => {
+        this.aiReport.set(report);
+        this.aiReportLoading.set(false);
+        this.aiReportVisible.set(true);
+      },
+      error: () => {
+        this.aiReportError.set("Impossible de générer le rapport IA. Vérifiez la configuration de la clé API côté serveur.");
+        this.aiReportLoading.set(false);
+      },
+    });
+  }
+
+  aiReportList(json?: string): string[] {
+    if (!json) return [];
+    try {
+      return JSON.parse(json);
+    } catch {
+      return [];
+    }
+  }
+
+  aiSeverityClass(severity?: string): string {
+    switch (severity) {
+      case 'FAIBLE': return 'severity-low';
+      case 'ELEVE': return 'severity-high';
+      default: return 'severity-medium';
+    }
+  }
+
+  downloadAiReport(): void {
+    const report = this.aiReport();
+    if (!report) return;
+
+    const strengths = this.aiReportList(report.strengthsJson);
+    const risks = this.aiReportList(report.risksJson);
+    const recommendations = this.aiReportList(report.recommendationsJson);
+    const severity = report.severity ?? 'N/A';
+    const severityClass = this.aiSeverityClass(report.severity);
+
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const listBlock = (title: string, items: string[]) =>
+      items.length
+        ? `<section><h2>${title}</h2><ul>${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></section>`
+        : '';
+
+    const generatedAt = report.generatedAt
+      ? new Date(report.generatedAt).toLocaleString('fr-FR')
+      : null;
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Rapport IA — ${esc(this.testCaseNom)}</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: #0d2447; max-width: 760px; margin: 40px auto; padding: 0 24px; line-height: 1.6; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .meta { color: #6b7a99; font-size: 13px; margin-bottom: 20px; }
+  .severity-chip { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 24px; }
+  .severity-low { background: rgba(30,166,114,0.14); color: #0f7a4a; }
+  .severity-medium { background: rgba(217,155,21,0.14); color: #a06a0a; }
+  .severity-high { background: rgba(212,63,63,0.12); color: #d43f3f; }
+  section { margin-bottom: 24px; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7a99; margin: 0 0 8px; border-bottom: 1px solid #e5e9f2; padding-bottom: 6px; }
+  p { margin: 0; }
+  ul { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  @media print {
+    body { margin: 0; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+  <h1>Rapport IA — ${esc(this.testCaseNom)}</h1>
+  ${generatedAt ? `<div class="meta">Généré le ${esc(generatedAt)}</div>` : ''}
+  <div class="severity-chip ${severityClass}">${esc(severity)}</div>
+
+  <section>
+    <h2>Résumé</h2>
+    <p>${esc(report.summary ?? '')}</p>
+  </section>
+
+  ${listBlock('Points positifs', strengths)}
+  ${listBlock('Risques identifiés', risks)}
+  ${listBlock('Recommandations', recommendations)}
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rapport-ia-${this.testCaseNom.trim().toLowerCase().replace(/\s+/g, '-')}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private resetAiReport(): void {
+    this.aiReport.set(null);
+    this.aiReportVisible.set(false);
+    this.aiReportLoading.set(false);
+    this.aiReportError.set(null);
   }
 
   private loadLatest(): void {

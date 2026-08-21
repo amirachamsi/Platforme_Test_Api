@@ -81,6 +81,19 @@ export interface Execution {
   corpsReponsesJson?: string; // [{preview, count}] — corps de réponse distincts observés
 }
 
+export type AiReportSeverity = 'FAIBLE' | 'MOYEN' | 'ELEVE';
+
+export interface AiReport {
+  id?: number;
+  generatedAt?: string;
+  severity?: AiReportSeverity;
+  summary?: string;
+  strengthsJson?: string;      // JSON string array, parse client-side
+  risksJson?: string;          // JSON string array, parse client-side
+  recommendationsJson?: string; // JSON string array, parse client-side
+  rawResponse?: string;
+}
+
 export type CampaignMode = 'PARALLELE' | 'SEQUENTIELLE';
 
 export interface CampaignTestCaseRef {

@@ -142,6 +142,75 @@
         </summary>
         <pre>{{ selectedExecution()!.rapportK6Json }}</pre>
       </details>
+
+      <div class="ai-report-block">
+        @if (!aiReportVisible() && !aiReportLoading()) {
+          <button type="button" class="ai-generate-btn" (click)="generateAiReport()">
+            ✨ Générer un rapport IA
+          </button>
+        }
+
+        @if (aiReportError()) {
+          <p class="ai-error">{{ aiReportError() }}</p>
+        }
+
+        @if (aiReportLoading()) {
+          <div class="ai-loading">
+            <span class="ai-spinner"></span>
+            <span>Analyse en cours par l'IA…</span>
+          </div>
+        }
+
+        @if (aiReportVisible() && aiReport()) {
+          <div class="ai-report">
+            <div class="ai-report-header ai-report-section">
+              <h3>✨ Rapport IA</h3>
+              <div class="ai-report-header-actions">
+                <span class="severity-chip" [class]="aiSeverityClass(aiReport()!.severity)">{{ aiReport()!.severity ?? 'N/A' }}</span>
+                <button type="button" class="copy-btn" (click)="downloadAiReport()">Télécharger (.html)</button>
+              </div>
+            </div>
+
+            <div class="ai-report-section">
+              <h4>Résumé</h4>
+              <p>{{ aiReport()!.summary }}</p>
+            </div>
+
+            @if (aiReportList(aiReport()!.strengthsJson).length > 0) {
+              <div class="ai-report-section">
+                <h4>Points positifs</h4>
+                <ul>
+                  @for (item of aiReportList(aiReport()!.strengthsJson); track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (aiReportList(aiReport()!.risksJson).length > 0) {
+              <div class="ai-report-section">
+                <h4>Risques identifiés</h4>
+                <ul>
+                  @for (item of aiReportList(aiReport()!.risksJson); track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (aiReportList(aiReport()!.recommendationsJson).length > 0) {
+              <div class="ai-report-section">
+                <h4>Recommandations</h4>
+                <ul>
+                  @for (item of aiReportList(aiReport()!.recommendationsJson); track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        }
+      </div>
     }
   </div>
 </div>
