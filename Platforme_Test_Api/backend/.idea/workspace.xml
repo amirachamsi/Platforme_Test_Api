@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="812b072e-89f6-45e4-ab09-d788431e75b8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/back/target/classes/com/bct/back/BackApplication.class" beforeDir="false" afterPath="$PROJECT_DIR$/back/target/classes/com/bct/back/BackApplication.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/back/target/classes/com/bct/back/controllers/ExecutionController.class" beforeDir="false" afterPath="$PROJECT_DIR$/back/target/classes/com/bct/back/controllers/ExecutionController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/EndpointService.class" beforeDir="false" afterPath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/EndpointService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/ExecutionReportHtmlService$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/ExecutionReportHtmlService$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/ExecutionReportHtmlService$StatusCount.class" beforeDir="false" afterPath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/ExecutionReportHtmlService$StatusCount.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/ExecutionReportHtmlService.class" beforeDir="false" afterPath="$PROJECT_DIR$/back/target/classes/com/bct/back/services/ExecutionReportHtmlService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/bct-api-test-platform/.tsbuildinfo" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/bct-api-test-platform/.tsbuildinfo" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_cdk_drag-drop.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_cdk_drag-drop.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_common.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_common.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_common_http.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_common_http.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_core.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_core.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_forms.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_forms.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_platform-browser.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_platform-browser.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_router.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/@angular_router.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/_metadata.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/chunk-T4QU4GDF.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/chunk-T4QU4GDF.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/rxjs.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/.angular/cache/17.3.17/vite/deps/rxjs.js.map" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="3IAgJZ3fV08Qj8JiGR5cELusHLE" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Downloaded.Files.Path.Enabled": "false",
+    "Maven.back [clean].executor": "Run",
+    "Maven.back [compile].executor": "Run",
+    "Maven.back [install].executor": "Run",
+    "Maven.back [org.apache.maven.plugins:maven-clean-plugin:3.5.0:clean].executor": "Run",
+    "Maven.back [org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile].executor": "Run",
+    "Maven.back [org.apache.maven.plugins:maven-install-plugin:3.1.4:install].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/amira/Desktop/stage/Platforme_Test_Api/backend",
+    "project.structure.last.edited": "Libraries",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.splitter.proportion": "0.18290259"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="812b072e-89f6-45e4-ab09-d788431e75b8" name="Changes" comment="" />
+      <created>1787212717903</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1787212717903</updated>
+    </task>
+    <servers />
+  </component>
+</project>
