@@ -19,7 +19,7 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)
-                .map(PrincipalUser::new) // 👈 Utilise directement ton UserPrincipal !
+                .map(PrincipalUser::new) 
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé : " + username));
     }
 
