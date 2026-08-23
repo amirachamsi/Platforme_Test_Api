@@ -88,9 +88,9 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            docker network inspect app-net >/dev/null 2>&1 || docker network create app-net
+            docker network inspect app-net >NUL 2>&1 || docker network create app-net
             docker pull ${{ env.IMAGE_NAME }}:latest
-            docker stop bct-frontend || true
-            docker rm bct-frontend || true
+            docker stop bct-frontend
+            docker rm bct-frontend
             docker run -d --name bct-frontend --network app-net --restart unless-stopped -p 80:80 ${{ env.IMAGE_NAME }}:latest
             docker image prune -f

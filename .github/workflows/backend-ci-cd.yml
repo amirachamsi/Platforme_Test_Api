@@ -87,19 +87,19 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            docker network inspect app-net >/dev/null 2>&1 || docker network create app-net
+            docker network inspect app-net >NUL 2>&1 || docker network create app-net
             docker pull ${{ env.IMAGE_NAME }}:latest
-            docker stop bct-backend || true
-            docker rm bct-backend || true
-            docker run -d --name bct-backend --network app-net --restart unless-stopped -p 8081:8081 \
-              -e SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}" \
-              -e SPRING_DATASOURCE_USERNAME="${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
-              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}" \
-              -e MAIL_HOST="${{ secrets.MAIL_HOST }}" \
-              -e MAIL_PORT="${{ secrets.MAIL_PORT }}" \
-              -e MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" \
-              -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
+            docker stop bct-backend
+            docker rm bct-backend
+            docker run -d --name bct-backend --network app-net --restart unless-stopped -p 8081:8081 ^
+              -e SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}" ^
+              -e SPRING_DATASOURCE_USERNAME="${{ secrets.SPRING_DATASOURCE_USERNAME }}" ^
+              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}" ^
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" ^
+              -e JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}" ^
+              -e MAIL_HOST="${{ secrets.MAIL_HOST }}" ^
+              -e MAIL_PORT="${{ secrets.MAIL_PORT }}" ^
+              -e MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" ^
+              -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" ^
               ${{ env.IMAGE_NAME }}:latest
             docker image prune -f
