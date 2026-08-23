@@ -74,7 +74,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ============================================================
-  # JOB 3 : Déploiement sur le PC perso — via SSH
+  # JOB 3 : Déploiement sur le PC perso — via SSH (syntaxe cmd.exe Windows)
   # ============================================================
   deploy:
     needs: docker-build-push
@@ -87,31 +87,11 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: DOCKERHUB_TOKEN,DOCKERHUB_USERNAME,IMAGE_NAME
           script: |
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-            echo "Création du réseau partagé si besoin..."
-            docker network create app-net || true
-
-            echo "Récupération de la nouvelle image..."
-            docker pull $IMAGE_NAME:latest
-
-            echo "Arrêt de l'ancien conteneur (si existant)..."
-            docker stop bct-frontend || true
-            docker rm bct-frontend || true
-
-            echo "Démarrage du nouveau conteneur..."
-            docker run -d \
-              --name bct-frontend \
-              --network app-net \
-              --restart unless-stopped \
-              -p 80:80 \
-              $IMAGE_NAME:latest
-
-            echo "Nettoyage des anciennes images..."
+            echo ${{ secrets.DOCKERHUB_TOKEN }}| docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+            docker network create app-net
+            docker pull ${{ env.IMAGE_NAME }}:latest
+            docker stop bct-frontend
+            docker rm bct-frontend
+            docker run -d --name bct-frontend --network app-net --restart unless-stopped -p 80:80 ${{ env.IMAGE_NAME }}:latest
             docker image prune -f
-        env:
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}

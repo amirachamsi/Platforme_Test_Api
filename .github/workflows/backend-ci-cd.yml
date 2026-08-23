@@ -74,7 +74,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ============================================================
-  # JOB 3 : Déploiement sur le PC perso — via SSH
+  # JOB 3 : Déploiement sur le PC perso — via SSH (syntaxe cmd.exe Windows)
   # ============================================================
   deploy:
     needs: docker-build-push
@@ -87,49 +87,11 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: DOCKERHUB_TOKEN,DOCKERHUB_USERNAME,IMAGE_NAME,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,JWT_SECRET,JWT_EXPIRATION,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD
           script: |
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-            echo "Création du réseau partagé si besoin..."
-            docker network create app-net || true
-
-            echo "Récupération de la nouvelle image..."
-            docker pull $IMAGE_NAME:latest
-
-            echo "Arrêt de l'ancien conteneur (si existant)..."
-            docker stop bct-backend || true
-            docker rm bct-backend || true
-
-            echo "Démarrage du nouveau conteneur..."
-            docker run -d \
-              --name bct-backend \
-              --network app-net \
-              --restart unless-stopped \
-              -p 8081:8081 \
-              -e SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
-              -e SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
-              -e SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
-              -e JWT_SECRET="$JWT_SECRET" \
-              -e JWT_EXPIRATION="$JWT_EXPIRATION" \
-              -e MAIL_HOST="$MAIL_HOST" \
-              -e MAIL_PORT="$MAIL_PORT" \
-              -e MAIL_USERNAME="$MAIL_USERNAME" \
-              -e MAIL_PASSWORD="$MAIL_PASSWORD" \
-              $IMAGE_NAME:latest
-
-            echo "Nettoyage des anciennes images..."
+            echo ${{ secrets.DOCKERHUB_TOKEN }}| docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+            docker network create app-net
+            docker pull ${{ env.IMAGE_NAME }}:latest
+            docker stop bct-backend
+            docker rm bct-backend
+            docker run -d --name bct-backend --network app-net --restart unless-stopped -p 8081:8081 -e SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}" -e SPRING_DATASOURCE_USERNAME="${{ secrets.SPRING_DATASOURCE_USERNAME }}" -e SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}" -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}" -e MAIL_HOST="${{ secrets.MAIL_HOST }}" -e MAIL_PORT="${{ secrets.MAIL_PORT }}" -e MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" ${{ env.IMAGE_NAME }}:latest
             docker image prune -f
-        env:
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
-          MAIL_HOST: ${{ secrets.MAIL_HOST }}
-          MAIL_PORT: ${{ secrets.MAIL_PORT }}
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
