@@ -22,22 +22,23 @@ public class AuthService {
     private final JwtUtils jwtUtils; // Ton utilitaire de génération JWT
 
     public AuthResponse login(AuthRequest request) {
-        // 1. Authentifier l'utilisateur
+        System.out.println(">>> ETAPE 1: avant authenticate");
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
+        System.out.println(">>> ETAPE 2: apres authenticate, avant findByEmail");
 
-        // 2. Récupérer l'utilisateur
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+        System.out.println(">>> ETAPE 3: apres findByEmail, avant PrincipalUser");
 
-        // 3. Générer le Token JWT
         PrincipalUser principalUser = new PrincipalUser(user);
-        String jwtToken = jwtUtils.generateToken(principalUser);
-        // 4. Récupérer le nom du rôle sous forme de String
-        String roleName = user.getRole() != null ? user.getRole().toString() : "ADMIN";
+        System.out.println(">>> ETAPE 4: avant generateToken");
 
-        // 5. Renvoyer la réponse à Angular
+        String jwtToken = jwtUtils.generateToken(principalUser);
+        System.out.println(">>> ETAPE 5: apres generateToken, avant return");
+
+        String roleName = user.getRole() != null ? user.getRole().toString() : "ADMIN";
         return new AuthResponse(jwtToken, user.getEmail(), roleName, 60);
     }
 }
