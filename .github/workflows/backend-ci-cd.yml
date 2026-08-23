@@ -37,9 +37,9 @@ jobs:
         env:
           JWT_SECRET: test-secret-key-for-ci-only-not-used-in-prod
           JWT_EXPIRATION: 86400000
-          SPRING_DATASOURCE_URL: ${{ secrets.DB_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
 
   # ============================================================
   # JOB 2 : Build & push de l'image Docker — main ET amira (phase de test)
@@ -84,7 +84,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: DOCKERHUB_TOKEN,DOCKERHUB_USERNAME,IMAGE_NAME,DB_URL,DB_USERNAME,DB_PASSWORD,JWT_SECRET,JWT_EXPIRATION,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD
+          envs: DOCKERHUB_TOKEN,DOCKERHUB_USERNAME,IMAGE_NAME,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,JWT_SECRET,JWT_EXPIRATION,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD
           script: |
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
@@ -104,9 +104,9 @@ jobs:
               --network app-net \
               --restart unless-stopped \
               -p 8081:8081 \
-              -e SPRING_DATASOURCE_URL="$DB_URL" \
-              -e SPRING_DATASOURCE_USERNAME="$DB_USERNAME" \
-              -e SPRING_DATASOURCE_PASSWORD="$DB_PASSWORD" \
+              -e SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
+              -e SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
+              -e SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
               -e JWT_SECRET="$JWT_SECRET" \
               -e JWT_EXPIRATION="$JWT_EXPIRATION" \
               -e MAIL_HOST="$MAIL_HOST" \
@@ -121,9 +121,9 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
           MAIL_HOST: ${{ secrets.MAIL_HOST }}
