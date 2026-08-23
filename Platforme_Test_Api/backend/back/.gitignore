@@ -1,0 +1,15 @@
+# Fichiers sensibles - NE JAMAIS COMMITER
+env
+.env
+*.env
+
+# Build Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Système
+.DS_Store

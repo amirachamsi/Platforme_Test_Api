@@ -1,0 +1,114 @@
+name: CI/CD Frontend
+
+on:
+  push:
+    branches: [main, amira]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-backend-ci-cd.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/bct-frontend
+
+jobs:
+  # ============================================================
+  # JOB 1 : Build (CI) — pas de tests unitaires pour l'instant,
+  # aucun test n'est configuré dans le projet Angular (pas de Karma)
+  # ============================================================
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Build de production
+        run: npm run build
+
+  # ============================================================
+  # JOB 2 : Build & push de l'image Docker — main ET amira (phase de test)
+  # ============================================================
+  docker-build-push:
+    needs: build
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/amira') && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Connexion à Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build et push de l'image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
+  # JOB 3 : Déploiement sur le PC perso — via SSH
+  # ============================================================
+  deploy:
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déployer sur le PC via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          envs: DOCKERHUB_TOKEN,DOCKERHUB_USERNAME,IMAGE_NAME
+          script: |
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            echo "Création du réseau partagé si besoin..."
+            docker network create app-net || true
+
+            echo "Récupération de la nouvelle image..."
+            docker pull $IMAGE_NAME:latest
+
+            echo "Arrêt de l'ancien conteneur (si existant)..."
+            docker stop bct-frontend || true
+            docker rm bct-frontend || true
+
+            echo "Démarrage du nouveau conteneur..."
+            docker run -d \
+              --name bct-frontend \
+              --network app-net \
+              --restart unless-stopped \
+              -p 80:80 \
+              $IMAGE_NAME:latest
+
+            echo "Nettoyage des anciennes images..."
+            docker image prune -f
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
