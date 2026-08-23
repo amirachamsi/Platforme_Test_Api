@@ -59,8 +59,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Configurer Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build et push de l'image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: Platforme_Test_Api/frontend
           push: true
