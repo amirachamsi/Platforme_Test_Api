@@ -65,6 +65,6 @@ jobs:
             docker rm bct-prometheus
             docker stop bct-grafana
             docker rm bct-grafana
-            docker run -d --name bct-prometheus --network app-net --restart unless-stopped -p 9090:9090 ${{ env.IMAGE_PROMETHEUS }}:latest
-            docker run -d --name bct-grafana --network app-net --restart unless-stopped -p 3000:3000 ${{ env.IMAGE_GRAFANA }}:latest
+            docker run -d --name bct-prometheus --network app-net --restart unless-stopped -p 9090:9090 -v prometheus-data:/prometheus ${{ env.IMAGE_PROMETHEUS }}:latest
+            docker run -d --name bct-grafana --network app-net --restart unless-stopped -p 3000:3000 -v grafana-data:/var/lib/grafana ${{ env.IMAGE_GRAFANA }}:latest
             docker image prune -f
