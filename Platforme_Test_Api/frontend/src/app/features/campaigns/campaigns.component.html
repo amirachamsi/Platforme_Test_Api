@@ -6,9 +6,6 @@
   <button class="btn btn-primary" (click)="openForm()">Nouvelle campagne</button>
 </div>
 
-@if (error()) {
-  <div class="card run-error">{{ error() }}</div>
-}
 @if (launchError()) {
   <div class="card run-error">{{ launchError() }}</div>
 }
@@ -20,6 +17,9 @@
       <h2>{{ editingId() !== null ? 'Modifier la campagne' : 'Nouvelle campagne' }}</h2>
       <button type="button" class="form-overlay-close" (click)="closeForm()">✕</button>
     </div>
+    @if (error()) {
+      <div class="card run-error">{{ error() }}</div>
+    }
     <form (ngSubmit)="submit()">
     <div class="form-grid">
       <div class="span-2">
@@ -186,4 +186,20 @@
     [tauxErreurMax]="overlayTestCase()!.tauxErreurMax"
     (closed)="closeOverlay()">
   </app-execution-details-overlay>
+}
+
+@if (showDeleteConfirm()) {
+<div class="form-overlay-backdrop" (click)="closeDeleteConfirm()">
+  <div class="form-overlay-panel confirm-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ deleteConfirmTitle() }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeDeleteConfirm()">✕</button>
+    </div>
+    <p class="confirm-message">{{ deleteConfirmMessage() }}</p>
+    <div class="form-actions confirm-actions">
+      <button class="btn btn-secondary" type="button" (click)="closeDeleteConfirm()">Annuler</button>
+      <button class="btn confirm-delete-btn" type="button" (click)="confirmDelete()">{{ deleteConfirmActionLabel() }}</button>
+    </div>
+  </div>
+</div>
 }

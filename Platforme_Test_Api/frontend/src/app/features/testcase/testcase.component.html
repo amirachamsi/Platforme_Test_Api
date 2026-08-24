@@ -35,7 +35,7 @@
 
       <div>
         <label class="label" for="endpoint">Endpoint</label>
-        <select class="input" id="endpoint" name="endpoint" [(ngModel)]="form.endpointId">
+        <select class="input" id="endpoint" name="endpoint" [(ngModel)]="form.endpointId" (ngModelChange)="onJsonBodyChange()">
           <option value="">Sélectionnez un endpoint</option>
           @for (group of groupedEndpoints; track group.targetId) {
             <optgroup [label]="group.label">
@@ -95,10 +95,16 @@
       @if (showBodyField) {
       <div class="span-2">
         <label class="label" for="jsonBody">Payload / Corps de la requête (JSON)</label>
+        <div class="body-toolbar">
+          <button type="button" class="btn btn-secondary" (click)="prettifyJsonBody()">Prettify JSON</button>
+        </div>
         <textarea class="input mono" id="jsonBody" name="jsonBody" rows="4" [(ngModel)]="form.jsonBody" placeholder='{
   "compteSource": "ACC-001",
   "montant": 150.0
-}'></textarea>
+}' (ngModelChange)="onJsonBodyChange()"></textarea>
+        @if (jsonBodyError()) {
+          <small class="json-error">{{ jsonBodyError() }}</small>
+        }
       </div>
       }
 
@@ -188,4 +194,20 @@
     [tauxErreurMax]="selectedScenario()!.tauxErreurMax"
     (closed)="closeDetails()">
   </app-execution-details-overlay>
+}
+
+@if (showDeleteConfirm()) {
+<div class="form-overlay-backdrop" (click)="closeDeleteConfirm()">
+  <div class="form-overlay-panel confirm-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ deleteConfirmTitle() }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeDeleteConfirm()">✕</button>
+    </div>
+    <p class="confirm-message">{{ deleteConfirmMessage() }}</p>
+    <div class="form-actions confirm-actions">
+      <button class="btn btn-secondary" type="button" (click)="closeDeleteConfirm()">Annuler</button>
+      <button class="btn confirm-delete-btn" type="button" (click)="confirmDelete()">{{ deleteConfirmActionLabel() }}</button>
+    </div>
+  </div>
+</div>
 }

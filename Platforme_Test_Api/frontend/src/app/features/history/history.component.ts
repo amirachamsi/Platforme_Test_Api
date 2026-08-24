@@ -20,6 +20,8 @@ export class HistoryComponent implements OnInit {
   activeTab = signal<HistoryTab>('campagnes');
   searchQuery = signal('');
   sortAscending = signal(false);
+  pageSize = signal(10);
+  currentPage = signal(1);
 
   campaignLaunches = signal<CampaignLaunch[]>([]);
   executions = signal<Execution[]>([]);
@@ -47,6 +49,11 @@ export class HistoryComponent implements OnInit {
   deletingPingId = signal<number | null>(null);
   deletingAllPings = signal(false);
   pingDeleteError = signal('');
+  showDeleteConfirm = signal(false);
+  deleteConfirmTitle = signal('');
+  deleteConfirmMessage = signal('');
+  deleteConfirmActionLabel = signal('Supprimer');
+  private pendingDeleteAction: (() => void) | null = null;
 
   constructor(
     private campaignService: CampaignService,
@@ -63,10 +70,73 @@ export class HistoryComponent implements OnInit {
   setTab(tab: HistoryTab): void {
     this.activeTab.set(tab);
     this.searchQuery.set('');
+    this.currentPage.set(1);
   }
 
   toggleSortOrder(): void {
     this.sortAscending.set(!this.sortAscending());
+    this.currentPage.set(1);
+  }
+
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
+    this.currentPage.set(1);
+  }
+
+  onPageSizeChange(value: string | number): void {
+    const n = Math.floor(Number(value));
+    if (!Number.isFinite(n) || n <= 0) return;
+    this.pageSize.set(n);
+    this.currentPage.set(1);
+  }
+
+  // --- Pagination (client-side, over whichever tab's filtered+sorted list is active) ---
+
+  get activeFilteredLength(): number {
+    switch (this.activeTab()) {
+      case 'campagnes': return this.filteredCampaignLaunches.length;
+      case 'executions': return this.filteredExecutions.length;
+      case 'pings': return this.filteredPings.length;
+    }
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.activeFilteredLength / this.pageSize()));
+  }
+
+  /** Self-healing: if a deletion shrinks the list past the current page, this
+   * clamps back to the last valid page automatically, no manual reset needed. */
+  get clampedPage(): number {
+    return Math.min(Math.max(1, this.currentPage()), this.totalPages);
+  }
+
+  get pagedCampaignLaunches(): CampaignLaunch[] {
+    return this.paginate(this.filteredCampaignLaunches);
+  }
+
+  get pagedExecutions(): Execution[] {
+    return this.paginate(this.filteredExecutions);
+  }
+
+  get pagedPings(): PingResult[] {
+    return this.paginate(this.filteredPings);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage.set(Math.max(1, Math.min(page, this.totalPages)));
+  }
+
+  prevPage(): void {
+    this.goToPage(this.clampedPage - 1);
+  }
+
+  nextPage(): void {
+    this.goToPage(this.clampedPage + 1);
+  }
+
+  private paginate<T>(list: T[]): T[] {
+    const start = (this.clampedPage - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
   }
 
   get searchPlaceholder(): string {
@@ -132,14 +202,25 @@ export class HistoryComponent implements OnInit {
   deleteExecution(execution: Execution, event?: Event): void {
     event?.stopPropagation();
     if (!execution.id || this.deletingId() !== null || this.deletingAll()) return;
-    if (!window.confirm('Supprimer cette exécution de l’historique ?')) return;
+    this.openDeleteConfirm(
+      'Supprimer l\'execution',
+      `Voulez-vous supprimer l'execution "${execution.testcase?.nom ?? 'inconnue'}" de l'historique ?`,
+      () => this.performDeleteExecution(execution),
+      'Supprimer l\'execution',
+    );
+  }
+
+  private performDeleteExecution(execution: Execution): void {
+    this.closeDeleteConfirm();
+    const executionId = execution.id;
+    if (executionId == null) return;
 
     this.executionDeleteError.set('');
-    this.deletingId.set(execution.id);
-    this.executionService.delete(execution.id).subscribe({
+    this.deletingId.set(executionId);
+    this.executionService.delete(executionId).subscribe({
       next: () => {
-        this.executions.update((executions) => executions.filter((item) => item.id !== execution.id));
-        if (this.overlayExecution()?.id === execution.id) this.closeOverlay();
+        this.executions.update((executions) => executions.filter((item) => item.id !== executionId));
+        if (this.overlayExecution()?.id === executionId) this.closeOverlay();
         this.deletingId.set(null);
       },
       error: () => {
@@ -151,7 +232,16 @@ export class HistoryComponent implements OnInit {
 
   deleteAllExecutions(): void {
     if (this.deletingAll() || this.deletingId() !== null || this.executions().length === 0) return;
-    if (!window.confirm('Supprimer définitivement tout l’historique des exécutions ?')) return;
+    this.openDeleteConfirm(
+      'Supprimer tout l\'historique des executions',
+      `Voulez-vous supprimer toutes les executions de l'historique (${this.executions().length} element(s)) ?`,
+      () => this.performDeleteAllExecutions(),
+      'Supprimer tout',
+    );
+  }
+
+  private performDeleteAllExecutions(): void {
+    this.closeDeleteConfirm();
 
     this.executionDeleteError.set('');
     this.deletingAll.set(true);
@@ -170,13 +260,24 @@ export class HistoryComponent implements OnInit {
 
   deletePing(ping: PingResult): void {
     if (!ping.id || this.deletingPingId() !== null || this.deletingAllPings()) return;
-    if (!window.confirm('Supprimer ce ping de l’historique ?')) return;
+    this.openDeleteConfirm(
+      'Supprimer le ping',
+      `Voulez-vous supprimer le ping de l'endpoint "${ping.endpoint?.nom ?? 'inconnu'}" ?`,
+      () => this.performDeletePing(ping),
+      'Supprimer le ping',
+    );
+  }
+
+  private performDeletePing(ping: PingResult): void {
+    this.closeDeleteConfirm();
+    const pingId = ping.id;
+    if (pingId == null) return;
 
     this.pingDeleteError.set('');
-    this.deletingPingId.set(ping.id);
-    this.pingHistoryService.delete(ping.id).subscribe({
+    this.deletingPingId.set(pingId);
+    this.pingHistoryService.delete(pingId).subscribe({
       next: () => {
-        this.pings.update((pings) => pings.filter((item) => item.id !== ping.id));
+        this.pings.update((pings) => pings.filter((item) => item.id !== pingId));
         this.deletingPingId.set(null);
       },
       error: () => {
@@ -188,7 +289,16 @@ export class HistoryComponent implements OnInit {
 
   deleteAllPings(): void {
     if (this.deletingAllPings() || this.deletingPingId() !== null || this.pings().length === 0) return;
-    if (!window.confirm('Supprimer définitivement tout l’historique des pings ?')) return;
+    this.openDeleteConfirm(
+      'Supprimer tout l\'historique des pings',
+      `Voulez-vous supprimer tous les pings de l'historique (${this.pings().length} element(s)) ?`,
+      () => this.performDeleteAllPings(),
+      'Supprimer tout',
+    );
+  }
+
+  private performDeleteAllPings(): void {
+    this.closeDeleteConfirm();
 
     this.pingDeleteError.set('');
     this.deletingAllPings.set(true);
@@ -285,5 +395,27 @@ export class HistoryComponent implements OnInit {
         this.loadingPings.set(false);
       },
     });
+  }
+
+  openDeleteConfirm(title: string, message: string, action: () => void, actionLabel = 'Supprimer'): void {
+    this.deleteConfirmTitle.set(title);
+    this.deleteConfirmMessage.set(message);
+    this.deleteConfirmActionLabel.set(actionLabel);
+    this.pendingDeleteAction = action;
+    this.showDeleteConfirm.set(true);
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm.set(false);
+    this.pendingDeleteAction = null;
+  }
+
+  confirmDelete(): void {
+    const action = this.pendingDeleteAction;
+    if (!action) {
+      this.closeDeleteConfirm();
+      return;
+    }
+    action();
   }
 }

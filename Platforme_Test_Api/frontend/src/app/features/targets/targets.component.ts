@@ -34,12 +34,17 @@ export class TargetsComponent implements OnInit {
   formStep = signal<1 | 2 | 3>(1);
   endpointTab = signal<'params' | 'headers' | 'body'>('params');
   bodyJsonError = signal<string | null>(null);
+  showDeleteConfirm = signal(false);
+  deleteConfirmTitle = signal('');
+  deleteConfirmMessage = signal('');
+  deleteConfirmActionLabel = signal('Supprimer');
 
   form: ApiTarget = this.createEmptyForm();
   endpointForm: ApiEndpoint = this.createEmptyEndpointForm();
   // Dynamic headers and params lists for the form (local-only)
   endpointHeaders: { key: string; value: string; enabled: boolean }[] = [];
   endpointParams: { key: string; value: string; enabled: boolean }[] = [];
+  private pendingDeleteAction: (() => void) | null = null;
 
   selectedTargetAuthType = signal<'NONE' | 'BEARER' | 'API_KEY' | 'OAUTH2'>('NONE');
   selectedTargetSecretRef: string | undefined = undefined;
@@ -107,6 +112,7 @@ export class TargetsComponent implements OnInit {
     this.endpointForm = this.createEmptyEndpointForm();
     this.endpointHeaders = [];
     this.endpointParams = [];
+    this.bodyJsonError.set(null);
     this.endpointError.set(null);
     this.showEndpointForm.set(true);
   }
@@ -117,6 +123,7 @@ export class TargetsComponent implements OnInit {
     this.endpointForm = this.createEmptyEndpointForm();
     this.endpointHeaders = [];
     this.endpointParams = [];
+    this.bodyJsonError.set(null);
     this.endpointError.set(null);
   }
 
@@ -147,9 +154,16 @@ export class TargetsComponent implements OnInit {
 
   // SUPPRESSION D'UNE CIBLE
   deleteTarget(target: ApiTarget): void {
-    if (!confirm(`Voulez-vous vraiment supprimer la cible "${target.nom}" ?`)) {
-      return;
-    }
+    this.openDeleteConfirm(
+      'Supprimer la cible',
+      `Voulez-vous vraiment supprimer la cible "${target.nom}" ?`,
+      () => this.performDeleteTarget(target),
+      'Supprimer la cible',
+    );
+  }
+
+  private performDeleteTarget(target: ApiTarget): void {
+    this.closeDeleteConfirm();
 
     if (target.id) {
       this.targetService.delete(target.id).subscribe({
@@ -183,6 +197,9 @@ export class TargetsComponent implements OnInit {
     const endpointStarted = !!(this.endpointForm.nom || this.endpointForm.chemin);
     if (!isEdit && endpointStarted && (!this.endpointForm.nom || !this.endpointForm.chemin)) {
       this.error.set('Veuillez renseigner le nom et le chemin du premier endpoint.');
+      return;
+    }
+    if (!isEdit && endpointStarted && !this.validateEndpointBodyJson('form')) {
       return;
     }
 
@@ -245,6 +262,10 @@ export class TargetsComponent implements OnInit {
 
   onBodyChange(): void {
     const body = (this.endpointForm.body || '').trim();
+    if (this.endpointForm.methode === 'POST' && !body) {
+      this.bodyJsonError.set('Le body est obligatoire pour une requete POST.');
+      return;
+    }
     if (!body || this.endpointForm.contentType !== 'application/json') {
       this.bodyJsonError.set(null);
       return;
@@ -304,15 +325,9 @@ export class TargetsComponent implements OnInit {
     this.endpointSaving.set(true);
     this.endpointError.set(null);
 
-    // If Content-Type is JSON, validate the body is valid JSON
-    if (this.endpointForm.contentType === 'application/json' && (this.endpointForm.body || '').trim()) {
-      try {
-        JSON.parse(this.endpointForm.body!);
-      } catch (e: any) {
-        this.endpointSaving.set(false);
-        this.endpointError.set('Corps JSON invalide: ' + (e?.message || e));
-        return;
-      }
+    if (!this.validateEndpointBodyJson('endpoint')) {
+      this.endpointSaving.set(false);
+      return;
     }
 
     // Serialize headers and params from local lists into the payload
@@ -392,6 +407,7 @@ export class TargetsComponent implements OnInit {
   editEndpoint(endpoint: ApiEndpoint): void {
     this.endpointEditingId.set(endpoint.id ?? null);
     this.endpointForm = { ...endpoint };
+    this.bodyJsonError.set(null);
     // Populate local headers/params lists from existing endpoint values
     this.endpointHeaders = [];
     if (endpoint.headers) {
@@ -432,9 +448,16 @@ export class TargetsComponent implements OnInit {
   }
 
   deleteEndpoint(endpoint: ApiEndpoint): void {
-    if (!confirm(`Voulez-vous vraiment supprimer l'endpoint "${endpoint.nom}" ?`)) {
-      return;
-    }
+    this.openDeleteConfirm(
+      'Supprimer l\'endpoint',
+      `Voulez-vous vraiment supprimer l'endpoint "${endpoint.nom}" ?`,
+      () => this.performDeleteEndpoint(endpoint),
+      'Supprimer l\'endpoint',
+    );
+  }
+
+  private performDeleteEndpoint(endpoint: ApiEndpoint): void {
+    this.closeDeleteConfirm();
 
     if (!endpoint.id) {
       this.endpoints.update((list) => list.filter((item) => item !== endpoint));
@@ -483,6 +506,7 @@ export class TargetsComponent implements OnInit {
     this.endpointForm = this.createEmptyEndpointForm();
     this.endpointHeaders = [];
     this.endpointParams = [];
+    this.bodyJsonError.set(null);
   }
 
   private resetForm(): void {
@@ -540,6 +564,30 @@ export class TargetsComponent implements OnInit {
     this.syncInputFromParams();
   }
 
+  requestRemoveHeader(index: number): void {
+    this.openDeleteConfirm(
+      'Supprimer le header',
+      `Voulez-vous supprimer le header #${index + 1} ?`,
+      () => {
+        this.removeHeader(index);
+        this.closeDeleteConfirm();
+      },
+      'Supprimer le header',
+    );
+  }
+
+  requestRemoveParam(index: number): void {
+    this.openDeleteConfirm(
+      'Supprimer le parametre',
+      `Voulez-vous supprimer le parametre d'URL #${index + 1} ?`,
+      () => {
+        this.removeParam(index);
+        this.closeDeleteConfirm();
+      },
+      'Supprimer le parametre',
+    );
+  }
+
   onHeaderChange(): void {
     this.syncTextareaFromHeaders();
   }
@@ -586,5 +634,60 @@ export class TargetsComponent implements OnInit {
       .filter((p) => p.enabled && p.key)
       .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`)
       .join('&');
+  }
+
+  openDeleteConfirm(title: string, message: string, action: () => void, actionLabel = 'Supprimer'): void {
+    this.deleteConfirmTitle.set(title);
+    this.deleteConfirmMessage.set(message);
+    this.deleteConfirmActionLabel.set(actionLabel);
+    this.pendingDeleteAction = action;
+    this.showDeleteConfirm.set(true);
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm.set(false);
+    this.pendingDeleteAction = null;
+  }
+
+  confirmDelete(): void {
+    const action = this.pendingDeleteAction;
+    if (!action) {
+      this.closeDeleteConfirm();
+      return;
+    }
+    action();
+  }
+
+  private validateEndpointBodyJson(scope: 'form' | 'endpoint'): boolean {
+    const body = (this.endpointForm.body || '').trim();
+    if (this.endpointForm.methode === 'POST' && !body) {
+      const requiredMessage = 'Le body est obligatoire pour une requete POST.';
+      this.bodyJsonError.set(requiredMessage);
+      if (scope === 'form') {
+        this.error.set(requiredMessage);
+      } else {
+        this.endpointError.set(requiredMessage);
+      }
+      return false;
+    }
+    if (!body || this.endpointForm.contentType !== 'application/json') {
+      this.bodyJsonError.set(null);
+      return true;
+    }
+
+    try {
+      JSON.parse(body);
+      this.bodyJsonError.set(null);
+      return true;
+    } catch (error: any) {
+      const message = error?.message || 'JSON invalide.';
+      this.bodyJsonError.set(message);
+      if (scope === 'form') {
+        this.error.set('Le body JSON du premier endpoint est invalide: ' + message);
+      } else {
+        this.endpointError.set('Corps JSON invalide: ' + message);
+      }
+      return false;
+    }
   }
 }

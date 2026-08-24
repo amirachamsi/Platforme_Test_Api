@@ -45,6 +45,11 @@ export class TestcaseComponent implements OnInit {
   progressIsEstimate = signal(false);
   saving = signal(false);
   error = signal<string | null>(null);
+  jsonBodyError = signal<string | null>(null);
+  showDeleteConfirm = signal(false);
+  deleteConfirmTitle = signal('');
+  deleteConfirmMessage = signal('');
+  deleteConfirmActionLabel = signal('Supprimer');
 
   // --- Details overlay: just tracks which scenario is selected; the shared
   // component fetches/renders everything else from its @Input()s.
@@ -53,6 +58,7 @@ export class TestcaseComponent implements OnInit {
 
   form = this.emptyForm();
   private progressIntervalId: number | null = null;
+  private pendingDeleteAction: (() => void) | null = null;
 
   constructor(
     private endpointService: EndpointService,
@@ -71,6 +77,7 @@ export class TestcaseComponent implements OnInit {
   openForm(): void {
     this.editingId.set(null);
     this.error.set(null);
+    this.jsonBodyError.set(null);
     this.form = this.emptyForm();
     this.showForm.set(true);
   }
@@ -78,12 +85,14 @@ export class TestcaseComponent implements OnInit {
   closeForm(): void {
     this.showForm.set(false);
     this.error.set(null);
+    this.jsonBodyError.set(null);
     this.resetForm();
   }
 
   editScenario(scenario: TestcaseItem): void {
     this.editingId.set(scenario.id);
     this.error.set(null);
+    this.jsonBodyError.set(null);
     this.form = {
       nom: scenario.nom,
       typeTest: this.getValueKey(scenario.typeTest),
@@ -110,7 +119,7 @@ export class TestcaseComponent implements OnInit {
     }
 
     const jsonBody = this.form.jsonBody.trim();
-    if (jsonBody && !this.isValidJson(jsonBody)) {
+    if (!this.validateJsonBody()) {
       this.error.set('Le corps JSON doit être un JSON valide.');
       return;
     }
@@ -154,6 +163,16 @@ export class TestcaseComponent implements OnInit {
   }
 
   deleteScenario(scenario: TestcaseItem): void {
+    this.openDeleteConfirm(
+      'Supprimer le scenario',
+      `Voulez-vous vraiment supprimer le scenario "${scenario.nom}" ?`,
+      () => this.performDeleteScenario(scenario),
+      'Supprimer le scenario',
+    );
+  }
+
+  private performDeleteScenario(scenario: TestcaseItem): void {
+    this.closeDeleteConfirm();
     this.testcaseService.delete(scenario.id).subscribe({
       next: () => this.scenarios.update((items) => items.filter((item) => item.id !== scenario.id)),
     });
@@ -315,6 +334,7 @@ export class TestcaseComponent implements OnInit {
 
   private resetForm(): void {
     this.editingId.set(null);
+    this.jsonBodyError.set(null);
     this.form = this.emptyForm();
   }
 
@@ -392,6 +412,42 @@ export class TestcaseComponent implements OnInit {
     }
   }
 
+  onJsonBodyChange(): void {
+    this.validateJsonBody();
+  }
+
+  prettifyJsonBody(): void {
+    if (!this.validateJsonBody()) {
+      return;
+    }
+    const value = this.form.jsonBody.trim();
+    if (!value) {
+      return;
+    }
+    this.form.jsonBody = JSON.stringify(JSON.parse(value), null, 2);
+  }
+
+  private validateJsonBody(): boolean {
+    const value = this.form.jsonBody.trim();
+    if (!value || !this.showBodyField) {
+      if (this.selectedEndpointMethod === 'POST') {
+        this.jsonBodyError.set('Le body est obligatoire pour une requete POST.');
+        return false;
+      }
+      this.jsonBodyError.set(null);
+      return true;
+    }
+
+    try {
+      JSON.parse(value);
+      this.jsonBodyError.set(null);
+      return true;
+    } catch (error: any) {
+      this.jsonBodyError.set(error?.message || 'JSON invalide.');
+      return false;
+    }
+  }
+
   private isValidJson(value: string): boolean {
     try {
       JSON.parse(value);
@@ -399,5 +455,27 @@ export class TestcaseComponent implements OnInit {
     } catch {
       return false;
     }
+  }
+
+  openDeleteConfirm(title: string, message: string, action: () => void, actionLabel = 'Supprimer'): void {
+    this.deleteConfirmTitle.set(title);
+    this.deleteConfirmMessage.set(message);
+    this.deleteConfirmActionLabel.set(actionLabel);
+    this.pendingDeleteAction = action;
+    this.showDeleteConfirm.set(true);
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm.set(false);
+    this.pendingDeleteAction = null;
+  }
+
+  confirmDelete(): void {
+    const action = this.pendingDeleteAction;
+    if (!action) {
+      this.closeDeleteConfirm();
+      return;
+    }
+    action();
   }
 }

@@ -32,6 +32,9 @@
   overflow-y: auto;
   box-shadow: 0 20px 50px rgba(13, 36, 71, 0.25);
 }
+.form-overlay-panel.confirm-panel {
+  max-width: 520px;
+}
 .form-overlay-header {
   display: flex;
   justify-content: space-between;
@@ -54,6 +57,24 @@
   color: var(--bct-danger);
   background: rgba(212, 63, 63, 0.08);
   font-size: 13px;
+}
+
+.confirm-message {
+  color: var(--bct-ink-soft);
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-delete-btn {
+  background: rgba(212, 63, 63, 0.12);
+  border-color: rgba(212, 63, 63, 0.45);
+  color: var(--bct-danger);
 }
 
 .mode-toggle {

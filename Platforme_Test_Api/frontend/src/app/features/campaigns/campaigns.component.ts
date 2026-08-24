@@ -30,6 +30,10 @@ export class CampaignsComponent implements OnInit {
   editingId = signal<number | null>(null);
   saving = signal(false);
   error = signal<string | null>(null);
+  showDeleteConfirm = signal(false);
+  deleteConfirmTitle = signal('');
+  deleteConfirmMessage = signal('');
+  deleteConfirmActionLabel = signal('Supprimer');
 
   searchQuery = signal('');
 
@@ -53,6 +57,7 @@ export class CampaignsComponent implements OnInit {
   overlayTestCase = signal<TestCase | null>(null);
 
   form = this.emptyForm();
+  private pendingDeleteAction: (() => void) | null = null;
 
   constructor(
     private testcaseService: TestcaseService,
@@ -72,6 +77,7 @@ export class CampaignsComponent implements OnInit {
 
   openForm(): void {
     this.editingId.set(null);
+    this.error.set(null);
     this.searchQuery.set('');
     this.form = this.emptyForm();
     this.showForm.set(true);
@@ -79,12 +85,14 @@ export class CampaignsComponent implements OnInit {
 
   closeForm(): void {
     this.showForm.set(false);
+    this.error.set(null);
     this.resetForm();
   }
 
   editCampaign(campaign: Campaign, event?: Event): void {
     event?.stopPropagation();
     this.editingId.set(campaign.id!);
+    this.error.set(null);
     const ordered = [...(campaign.testCases ?? [])].sort((a, b) => a.ordre - b.ordre);
     this.form = {
       nom: campaign.nom,
@@ -136,6 +144,16 @@ export class CampaignsComponent implements OnInit {
 
   deleteCampaign(campaign: Campaign, event?: Event): void {
     event?.stopPropagation();
+    this.openDeleteConfirm(
+      'Supprimer la campagne',
+      `Voulez-vous vraiment supprimer la campagne "${campaign.nom}" ?`,
+      () => this.performDeleteCampaign(campaign),
+      'Supprimer la campagne',
+    );
+  }
+
+  private performDeleteCampaign(campaign: Campaign): void {
+    this.closeDeleteConfirm();
     this.campaignService.delete(campaign.id!).subscribe({
       next: () => this.campaigns.update((list) => list.filter((c) => c.id !== campaign.id)),
     });
@@ -366,5 +384,27 @@ export class CampaignsComponent implements OnInit {
       mode: 'PARALLELE' as CampaignMode,
       selectedTestCases: [] as TestCase[],
     };
+  }
+
+  openDeleteConfirm(title: string, message: string, action: () => void, actionLabel = 'Supprimer'): void {
+    this.deleteConfirmTitle.set(title);
+    this.deleteConfirmMessage.set(message);
+    this.deleteConfirmActionLabel.set(actionLabel);
+    this.pendingDeleteAction = action;
+    this.showDeleteConfirm.set(true);
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm.set(false);
+    this.pendingDeleteAction = null;
+  }
+
+  confirmDelete(): void {
+    const action = this.pendingDeleteAction;
+    if (!action) {
+      this.closeDeleteConfirm();
+      return;
+    }
+    action();
   }
 }

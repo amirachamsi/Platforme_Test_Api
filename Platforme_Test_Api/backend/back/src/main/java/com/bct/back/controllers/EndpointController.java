@@ -42,7 +42,7 @@ public class EndpointController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Endpoint create(@Valid @RequestBody Endpoint endpoint) {
+    public Endpoint create(@RequestBody Endpoint endpoint) {
         return apiEndpointService.create(endpoint);
     }
 

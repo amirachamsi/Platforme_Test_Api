@@ -129,7 +129,7 @@
               <input type="checkbox" [(ngModel)]="endpointParams[i].enabled" (ngModelChange)="onParamChange()" name="initialParamEnabled{{ i }}" title="Activer le paramètre" />
               <input class="input kv-key" [(ngModel)]="endpointParams[i].key" (ngModelChange)="onParamChange()" name="initialParamKey{{ i }}" placeholder="Clef (ex. page)" />
               <input class="input kv-val" [(ngModel)]="endpointParams[i].value" (ngModelChange)="onParamChange()" name="initialParamValue{{ i }}" placeholder="Valeur (ex. 1)" />
-              <button type="button" class="btn btn-link" (click)="removeParam(i)">Supprimer</button>
+              <button type="button" class="btn btn-link" (click)="requestRemoveParam(i)">Supprimer</button>
             </div>
             <button type="button" class="btn btn-secondary" (click)="addParam()">+ Ajouter un paramètre</button>
           </div>
@@ -143,7 +143,7 @@
               <input type="checkbox" [(ngModel)]="endpointHeaders[i].enabled" (ngModelChange)="onHeaderChange()" name="initialHeaderEnabled{{ i }}" title="Activer l'en-tête" />
               <input class="input kv-key" list="commonHeaders" [(ngModel)]="endpointHeaders[i].key" (ngModelChange)="onHeaderChange()" name="initialHeaderKey{{ i }}" placeholder="Clef (ex. Content-Type)" />
               <input class="input kv-val mono" [(ngModel)]="endpointHeaders[i].value" (ngModelChange)="onHeaderChange()" name="initialHeaderValue{{ i }}" placeholder="Valeur (ex. application/json)" />
-              <button type="button" class="btn btn-link" (click)="removeHeader(i)">Supprimer</button>
+              <button type="button" class="btn btn-link" (click)="requestRemoveHeader(i)">Supprimer</button>
             </div>
             <button type="button" class="btn btn-secondary" (click)="addHeader()">+ Ajouter un header</button>
           </div>
@@ -152,7 +152,7 @@
         @if (endpointTab() === 'body' && isBodySupported()) {
         <div>
           <label class="label" for="initialContentType">Content-Type</label>
-          <select class="input" id="initialContentType" name="initialContentType" [(ngModel)]="endpointForm.contentType"><option value="application/json">application/json</option><option value="text/plain">text/plain</option></select>
+          <select class="input" id="initialContentType" name="initialContentType" [(ngModel)]="endpointForm.contentType" (ngModelChange)="onBodyChange()"><option value="application/json">application/json</option><option value="text/plain">text/plain</option></select>
         </div>
         <div class="span-2">
           <label class="label" for="initialBody">Body (Corps de la requête)</label>
@@ -334,7 +334,7 @@
             <div *ngFor="let h of endpointHeaders; let i = index" class="kv-row">
               <input class="input kv-key" [(ngModel)]="endpointHeaders[i].key" (ngModelChange)="onHeaderChange()" name="h_key_{{i}}" placeholder="Header name (Ex. Content-Type)" />
               <input class="input kv-val mono" [(ngModel)]="endpointHeaders[i].value" (ngModelChange)="onHeaderChange()" name="h_val_{{i}}" placeholder="Header value" />
-              <button type="button" class="btn btn-link" (click)="removeHeader(i)">Supprimer</button>
+              <button type="button" class="btn btn-link" (click)="requestRemoveHeader(i)">Supprimer</button>
             </div>
             <div class="kv-add">
               <button type="button" class="btn btn-secondary" (click)="addHeader()">+ Ajouter un header</button>
@@ -348,7 +348,7 @@
             <div *ngFor="let p of endpointParams; let i = index" class="kv-row">
               <input class="input kv-key" [(ngModel)]="endpointParams[i].key" (ngModelChange)="onParamChange()" name="p_key_{{i}}" placeholder="Param name" />
               <input class="input kv-val" [(ngModel)]="endpointParams[i].value" (ngModelChange)="onParamChange()" name="p_val_{{i}}" placeholder="Param value" />
-              <button type="button" class="btn btn-link" (click)="removeParam(i)">Supprimer</button>
+              <button type="button" class="btn btn-link" (click)="requestRemoveParam(i)">Supprimer</button>
             </div>
             <div class="kv-add">
               <button type="button" class="btn btn-secondary" (click)="addParam()">+ Ajouter un paramètre</button>
@@ -362,7 +362,7 @@
 
         <div>
           <label class="label" for="contentType">Content-Type</label>
-          <select class="input" id="contentType" name="contentType" [(ngModel)]="endpointForm.contentType">
+          <select class="input" id="contentType" name="contentType" [(ngModel)]="endpointForm.contentType" (ngModelChange)="onBodyChange()">
             <option value="application/json">application/json</option>
             <option value="multipart/form-data">multipart/form-data</option>
             <option value="text/plain">text/plain</option>
@@ -372,7 +372,9 @@
         @if (isBodySupported()) {
         <div class="span-2">
           <label class="label" for="body">Body (Corps de la requête)</label>
-          <textarea class="input mono" id="body" name="body" rows="4" [(ngModel)]="endpointForm.body" placeholder='Ex. { "compteSource": "ACC-001", "montant": 150.0 }'></textarea>
+          <div class="body-toolbar"><button type="button" class="btn btn-secondary" (click)="prettifyBody()">Prettify JSON</button></div>
+          <textarea class="input mono" id="body" name="body" rows="4" [(ngModel)]="endpointForm.body" (ngModelChange)="onBodyChange()" placeholder='Ex. { "compteSource": "ACC-001", "montant": 150.0 }'></textarea>
+          @if (bodyJsonError()) { <small class="json-error">{{ bodyJsonError() }}</small> }
         </div>
         }
 
@@ -397,6 +399,22 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+}
+
+@if (showDeleteConfirm()) {
+<div class="form-overlay-backdrop nested-overlay-backdrop" (click)="closeDeleteConfirm()">
+  <div class="form-overlay-panel confirm-panel" (click)="$event.stopPropagation()">
+    <div class="form-overlay-header">
+      <h2>{{ deleteConfirmTitle() }}</h2>
+      <button type="button" class="form-overlay-close" (click)="closeDeleteConfirm()">✕</button>
+    </div>
+    <p class="confirm-message">{{ deleteConfirmMessage() }}</p>
+    <div class="form-actions confirm-actions">
+      <button class="btn btn-secondary" type="button" (click)="closeDeleteConfirm()">Annuler</button>
+      <button class="btn confirm-delete-btn" type="button" (click)="confirmDelete()">{{ deleteConfirmActionLabel() }}</button>
+    </div>
   </div>
 </div>
 }

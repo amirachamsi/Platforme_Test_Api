@@ -68,6 +68,9 @@
 .form-overlay-panel.wide-panel {
   max-width: 920px;
 }
+.form-overlay-panel.confirm-panel {
+  max-width: 520px;
+}
 .form-overlay-header {
   display: flex;
   justify-content: space-between;
@@ -248,4 +251,20 @@
   padding: 10px 12px;
   font-size: 13px;
   margin-bottom: 12px;
+}
+
+.confirm-message {
+  color: var(--bct-ink-soft);
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.confirm-actions {
+  justify-content: flex-end;
+}
+
+.confirm-delete-btn {
+  background: rgba(212, 63, 63, 0.12);
+  border-color: rgba(212, 63, 63, 0.45);
+  color: var(--bct-danger);
 }

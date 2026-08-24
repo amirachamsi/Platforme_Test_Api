@@ -12,10 +12,14 @@
 </div>
 
 <div class="controls-row">
-  <input class="input search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" [placeholder]="searchPlaceholder" />
+  <input class="input search-input" [ngModel]="searchQuery()" (ngModelChange)="onSearchChange($event)" [placeholder]="searchPlaceholder" />
   <button type="button" class="sort-btn" (click)="toggleSortOrder()">
     {{ sortAscending() ? '↑ Plus ancien d’abord' : '↓ Plus récent d’abord' }}
   </button>
+  <label class="page-size-field">
+    Par page :
+    <input class="input page-size-input" type="number" min="1" [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)" />
+  </label>
   @if (activeTab() === 'executions') {
     <button type="button" class="delete-all-btn" (click)="deleteAllExecutions()"
             [disabled]="executions().length === 0 || deletingAll() || deletingId() !== null">
@@ -44,7 +48,7 @@
     <div class="card empty-state">Aucune campagne trouvée.</div>
   } @else {
     <div class="history-list">
-      @for (launch of filteredCampaignLaunches; track launch.id) {
+      @for (launch of pagedCampaignLaunches; track launch.id) {
         <div class="card history-row">
           <div class="history-row-clickable" (click)="toggleExpandLaunch(launch)">
             <div class="history-row-main">
@@ -95,7 +99,7 @@
     <div class="card empty-state">Aucune exécution trouvée.</div>
   } @else {
     <div class="history-list">
-      @for (execution of filteredExecutions; track execution.id) {
+      @for (execution of pagedExecutions; track execution.id) {
         <div class="card history-row clickable" (click)="openExecutionOverlay(execution)">
           <div class="history-row-main">
             <strong>{{ execution.testcase?.nom ?? 'Scénario supprimé' }}</strong>
@@ -137,7 +141,7 @@
     <div class="card empty-state">Aucun ping trouvé.</div>
   } @else {
     <div class="history-list">
-      @for (ping of filteredPings; track ping.id) {
+      @for (ping of pagedPings; track ping.id) {
         <div class="card history-row">
           <div class="history-row-main">
             <strong>{{ ping.endpoint?.nom ?? 'Endpoint supprimé' }}</strong>
@@ -171,6 +175,16 @@
   }
 }
 
+@if (activeFilteredLength > 0) {
+  <div class="pagination-bar">
+    <button type="button" class="page-btn" (click)="goToPage(1)" [disabled]="clampedPage === 1">« Première</button>
+    <button type="button" class="page-btn" (click)="prevPage()" [disabled]="clampedPage === 1">‹ Précédent</button>
+    <span class="page-indicator">Page {{ clampedPage }} / {{ totalPages }} ({{ activeFilteredLength }} résultat(s))</span>
+    <button type="button" class="page-btn" (click)="nextPage()" [disabled]="clampedPage === totalPages">Suivant ›</button>
+    <button type="button" class="page-btn" (click)="goToPage(totalPages)" [disabled]="clampedPage === totalPages">Dernière »</button>
+  </div>
+}
+
 @if (showOverlay()) {
   <app-execution-details-overlay
     [execution]="overlayExecution()"
@@ -179,4 +193,20 @@
     [tauxErreurMax]="overlayScenario()?.tauxErreurMax ?? overlayExecution()?.testcase?.tauxErreurMax"
     (closed)="closeOverlay()">
   </app-execution-details-overlay>
+}
+
+@if (showDeleteConfirm()) {
+<div class="confirm-backdrop" (click)="closeDeleteConfirm()">
+  <div class="confirm-panel" (click)="$event.stopPropagation()">
+    <div class="confirm-header">
+      <h2>{{ deleteConfirmTitle() }}</h2>
+      <button type="button" class="confirm-close" (click)="closeDeleteConfirm()">✕</button>
+    </div>
+    <p class="confirm-message">{{ deleteConfirmMessage() }}</p>
+    <div class="confirm-actions">
+      <button type="button" class="page-btn" (click)="closeDeleteConfirm()">Annuler</button>
+      <button type="button" class="confirm-delete-btn" (click)="confirmDelete()">{{ deleteConfirmActionLabel() }}</button>
+    </div>
+  </div>
+</div>
 }

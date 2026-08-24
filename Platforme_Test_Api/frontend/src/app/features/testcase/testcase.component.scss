@@ -11,6 +11,40 @@
 .span-2 { grid-column: span 2; }
 .form-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 
+.body-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.json-error {
+  color: var(--bct-danger);
+  display: block;
+  margin-top: 6px;
+}
+
+.form-overlay-panel.confirm-panel {
+  max-width: 520px;
+}
+
+.confirm-message {
+  color: var(--bct-ink-soft);
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-delete-btn {
+  background: rgba(212, 63, 63, 0.12);
+  border-color: rgba(212, 63, 63, 0.45);
+  color: var(--bct-danger);
+}
+
 .form-overlay-backdrop {
   position: fixed;
   inset: 0;
