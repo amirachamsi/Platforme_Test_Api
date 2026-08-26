@@ -39,7 +39,7 @@
       <!-- URL de base -->
       <div class="span-2">
         <label class="label" for="urlBase">URL de base</label>
-        <input class="input mono" id="urlBase" name="urlBase" [(ngModel)]="form.urlBase" required placeholder="https://<service-mock-externe>" />
+        <input class="input mono" id="urlBase" name="urlBase" type="url" [(ngModel)]="form.urlBase" required pattern="https?://.+" placeholder="https://<service-mock-externe>" />
       </div>
 
       <!-- CHAMPS DYNAMIQUES SELON L'AUTHENTIFICATION -->
@@ -113,7 +113,7 @@
         </div>
         <div class="span-2">
           <label class="label" for="initialChemin">Chemin (Path)</label>
-          <input class="input mono" id="initialChemin" name="initialChemin" [(ngModel)]="endpointForm.chemin" placeholder="Ex. /api/v1/clients/solde" />
+          <input class="input mono" id="initialChemin" name="initialChemin" [(ngModel)]="endpointForm.chemin" required pattern="/[^\s?]*" placeholder="Ex. /api/v1/clients/solde" />
         </div>
         <div class="span-2 url-preview"><strong>{{ endpointForm.methode }}</strong> {{ previewUrl() }}</div>
         <div class="span-2 endpoint-tabs">
@@ -164,8 +164,8 @@
       }
       @if (editingId() === null && formStep() === 3) {
         <div class="span-2 combined-section"><h2>Attentes du test</h2><p class="subtitle">Définissez les critères de réussite de cette requête.</p></div>
-        <div><label class="label" for="initialCodeAttendu">Code HTTP attendu</label><input class="input" id="initialCodeAttendu" name="initialCodeAttendu" type="number" [(ngModel)]="endpointForm.codeAttendu" /></div>
-        <div><label class="label" for="initialTempsMaxMs">Temps de réponse max (ms)</label><input class="input" id="initialTempsMaxMs" name="initialTempsMaxMs" type="number" [(ngModel)]="endpointForm.tempsMaxMs" /></div>
+        <div><label class="label" for="initialCodeAttendu">Code HTTP attendu</label><input class="input" id="initialCodeAttendu" name="initialCodeAttendu" type="number" min="100" max="599" step="1" required [(ngModel)]="endpointForm.codeAttendu" /></div>
+        <div><label class="label" for="initialTempsMaxMs">Temps de réponse max (ms)</label><input class="input" id="initialTempsMaxMs" name="initialTempsMaxMs" type="number" min="0" required [(ngModel)]="endpointForm.tempsMaxMs" /></div>
       }
     </div>
 
@@ -320,7 +320,7 @@
 
         <div class="span-2">
           <label class="label" for="chemin">Chemin (Path)</label>
-          <input class="input mono" id="chemin" name="chemin" [(ngModel)]="endpointForm.chemin" required placeholder="Ex. /api/v1/clients/solde" />
+          <input class="input mono" id="chemin" name="chemin" [(ngModel)]="endpointForm.chemin" required pattern="/[^\s?]*" placeholder="Ex. /api/v1/clients/solde" />
         </div>
 
         <div>
@@ -380,12 +380,12 @@
 
         <div>
           <label class="label" for="codeAttendu">Code HTTP attendu</label>
-          <input class="input" id="codeAttendu" name="codeAttendu" type="number" [(ngModel)]="endpointForm.codeAttendu" />
+          <input class="input" id="codeAttendu" name="codeAttendu" type="number" min="100" max="599" step="1" required [(ngModel)]="endpointForm.codeAttendu" />
         </div>
 
         <div>
           <label class="label" for="tempsMaxMs">Temps de réponse max (ms)</label>
-          <input class="input" id="tempsMaxMs" name="tempsMaxMs" type="number" [(ngModel)]="endpointForm.tempsMaxMs" />
+          <input class="input" id="tempsMaxMs" name="tempsMaxMs" type="number" min="0" required [(ngModel)]="endpointForm.tempsMaxMs" />
         </div>
       </div>
 

@@ -49,27 +49,27 @@
 
       <div>
         <label class="label" for="expectedCode">Code attendu</label>
-        <input class="input" id="expectedCode" name="expectedCode" [(ngModel)]="form.expectedCode" placeholder="Ex. 200" />
+        <input class="input" id="expectedCode" name="expectedCode" type="text" inputmode="numeric" pattern="[0-9]+" required [(ngModel)]="form.expectedCode" placeholder="Ex. 200" />
       </div>
 
       <div>
         <label class="label" for="seuilMs">Seuil de temps de réponse max (ms)</label>
-        <input class="input" id="seuilMs" name="seuilMs" type="number" [(ngModel)]="form.seuilMs" />
+        <input class="input" id="seuilMs" name="seuilMs" type="number" min="0" required [(ngModel)]="form.seuilMs" />
       </div>
 
       <div>
         <label class="label" for="tauxErreurMax">Taux d’erreur max (%)</label>
-        <input class="input" id="tauxErreurMax" name="tauxErreurMax" type="number" step="0.1" [(ngModel)]="form.tauxErreurMax" />
+        <input class="input" id="tauxErreurMax" name="tauxErreurMax" type="number" min="0" step="0.1" required [(ngModel)]="form.tauxErreurMax" />
       </div>
 
       <div>
         <label class="label" for="timeoutMs">Timeout (ms)</label>
-        <input class="input" id="timeoutMs" name="timeoutMs" type="number" [(ngModel)]="form.timeoutMs" />
+        <input class="input" id="timeoutMs" name="timeoutMs" type="number" min="0" required [(ngModel)]="form.timeoutMs" />
       </div>
 
       <div>
         <label class="label" for="vus">Utilisateurs simultanés (VUs)</label>
-        <input class="input" id="vus" name="vus" type="number" min="1" [(ngModel)]="form.vus" placeholder="Ex. 10" />
+        <input class="input" id="vus" name="vus" type="number" min="1" step="1" required [(ngModel)]="form.vus" placeholder="Ex. 10" />
       </div>
 
       <div class="span-2">
@@ -83,12 +83,12 @@
       @if (form.executionMode === 'DUREE') {
         <div>
           <label class="label" for="dureeSec">Durée du test (secondes)</label>
-          <input class="input" id="dureeSec" name="dureeSec" type="number" min="1" [(ngModel)]="form.dureeSec" placeholder="Ex. 10" />
+          <input class="input" id="dureeSec" name="dureeSec" type="number" min="1" step="1" required [(ngModel)]="form.dureeSec" placeholder="Ex. 10" />
         </div>
       } @else {
         <div>
           <label class="label" for="nombreRequetes">Nombre de requêtes</label>
-          <input class="input" id="nombreRequetes" name="nombreRequetes" type="number" min="1" [(ngModel)]="form.nombreRequetes" placeholder="Ex. 100" />
+          <input class="input" id="nombreRequetes" name="nombreRequetes" type="number" min="1" step="1" required [(ngModel)]="form.nombreRequetes" placeholder="Ex. 100" />
         </div>
       }
 

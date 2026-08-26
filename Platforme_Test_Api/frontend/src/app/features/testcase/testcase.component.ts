@@ -118,6 +118,33 @@ export class TestcaseComponent implements OnInit {
       return;
     }
 
+    if (!/^\d+$/.test(this.form.expectedCode.trim())) {
+      this.error.set('Le code attendu est obligatoire et doit contenir uniquement des chiffres.');
+      return;
+    }
+
+    if (this.form.seuilMs === null || this.form.seuilMs === undefined || !Number.isFinite(Number(this.form.seuilMs)) || Number(this.form.seuilMs) < 0) {
+      this.error.set('Le temps de réponse maximal est obligatoire et doit être un nombre positif ou nul.');
+      return;
+    }
+
+    if (!this.validateNumericField(this.form.tauxErreurMax, 'Le taux d’erreur maximal', 0)) {
+      return;
+    }
+    if (!this.validateNumericField(this.form.timeoutMs, 'Le timeout', 0)) {
+      return;
+    }
+    if (!this.validateNumericField(this.form.vus, 'Le nombre d’utilisateurs simultanés', 1)) {
+      return;
+    }
+    if (this.form.executionMode === 'DUREE') {
+      if (!this.validateNumericField(this.form.dureeSec, 'La durée du test', 1)) {
+        return;
+      }
+    } else if (!this.validateNumericField(this.form.nombreRequetes, 'Le nombre de requêtes', 1)) {
+      return;
+    }
+
     const jsonBody = this.form.jsonBody.trim();
     if (!this.validateJsonBody()) {
       this.error.set('Le corps JSON doit être un JSON valide.');
@@ -360,7 +387,7 @@ export class TestcaseComponent implements OnInit {
    * rather than just disabling it, once an endpoint is actually selected. */
   get showBodyField(): boolean {
     const methode = this.selectedEndpointMethod;
-    return methode !== 'GET' && methode !== 'DELETE';
+    return methode !== null && methode !== 'GET' && methode !== 'DELETE';
   }
 
   private get selectedEndpointMethod(): string | null {
@@ -455,6 +482,14 @@ export class TestcaseComponent implements OnInit {
     } catch {
       return false;
     }
+  }
+
+  private validateNumericField(value: number | null | undefined, label: string, minimum: number): boolean {
+    if (value === null || value === undefined || !Number.isFinite(Number(value)) || Number(value) < minimum) {
+      this.error.set(`${label} est obligatoire et doit être un nombre supérieur ou égal à ${minimum}.`);
+      return false;
+    }
+    return true;
   }
 
   openDeleteConfirm(title: string, message: string, action: () => void, actionLabel = 'Supprimer'): void {

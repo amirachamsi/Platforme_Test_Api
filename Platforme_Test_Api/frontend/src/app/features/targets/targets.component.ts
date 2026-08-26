@@ -192,11 +192,20 @@ export class TargetsComponent implements OnInit {
       this.error.set('Veuillez remplir les champs obligatoires (Nom et URL).');
       return;
     }
+    if (!this.validateBaseUrl()) {
+      return;
+    }
 
     const isEdit = this.editingId() !== null;
     const endpointStarted = !!(this.endpointForm.nom || this.endpointForm.chemin);
     if (!isEdit && endpointStarted && (!this.endpointForm.nom || !this.endpointForm.chemin)) {
       this.error.set('Veuillez renseigner le nom et le chemin du premier endpoint.');
+      return;
+    }
+    if (!isEdit && endpointStarted && !this.validateInitialEndpointRequest()) {
+      return;
+    }
+    if (!isEdit && endpointStarted && !this.validateEndpointCriteria('form')) {
       return;
     }
     if (!isEdit && endpointStarted && !this.validateEndpointBodyJson('form')) {
@@ -238,9 +247,25 @@ export class TargetsComponent implements OnInit {
   }
 
   goToStep(step: 1 | 2 | 3): void {
-    if (step > 1 && (!this.form.nom || !this.form.urlBase)) {
-      this.error.set('Renseignez le nom et l’URL de base avant de poursuivre.');
-      return;
+    if (step > 1) {
+      if (!this.form.nom || !this.form.urlBase) {
+        this.error.set('Renseignez le nom et l’URL de base avant de poursuivre.');
+        return;
+      }
+      if (!this.validateBaseUrl()) {
+        return;
+      }
+    }
+    if (step === 3) {
+      if (!this.validateInitialEndpointRequest()) {
+        return;
+      }
+      if (!this.validateEndpointCriteria('form')) {
+        return;
+      }
+      if (!this.validateEndpointBodyJson('form')) {
+        return;
+      }
     }
     this.error.set(null);
     this.formStep.set(step);
@@ -321,6 +346,12 @@ export class TargetsComponent implements OnInit {
       this.endpointError.set('Veuillez renseigner le nom, la méthode HTTP et le chemin.');
       return;
     }
+    if (!this.validateEndpointRequest('endpoint')) {
+      return;
+    }
+    if (!this.validateEndpointCriteria('endpoint')) {
+      return;
+    }
 
     this.endpointSaving.set(true);
     this.endpointError.set(null);
@@ -340,7 +371,6 @@ export class TargetsComponent implements OnInit {
       .filter((p) => p.enabled && p.key)
       .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`)
       .join('&');
-
     // Fallback to free-text fields if dynamic lists are empty
     const headersString = headersStringFromList || (this.endpointForm.headers || '');
     const queryString = queryStringFromList || (this.endpointForm.params || '');
@@ -406,7 +436,7 @@ export class TargetsComponent implements OnInit {
 
   editEndpoint(endpoint: ApiEndpoint): void {
     this.endpointEditingId.set(endpoint.id ?? null);
-    this.endpointForm = { ...endpoint };
+    this.endpointForm = { ...endpoint, chemin: (endpoint.chemin || '').split('?')[0] };
     this.bodyJsonError.set(null);
     // Populate local headers/params lists from existing endpoint values
     this.endpointHeaders = [];
@@ -634,6 +664,100 @@ export class TargetsComponent implements OnInit {
       .filter((p) => p.enabled && p.key)
       .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`)
       .join('&');
+  }
+
+  private validateBaseUrl(): boolean {
+    const value = this.form.urlBase.trim();
+    try {
+      const url = new URL(value);
+      if (!['http:', 'https:'].includes(url.protocol) || !url.hostname || /\s/.test(value)) {
+        throw new Error();
+      }
+      return true;
+    } catch {
+      this.error.set('L’URL de base doit être une URL HTTP ou HTTPS valide, par exemple https://api.example.com.');
+      return false;
+    }
+  }
+
+  private validateInitialEndpointRequest(): boolean {
+    return this.validateEndpointRequest('form');
+  }
+
+  private validateEndpointCriteria(scope: 'form' | 'endpoint'): boolean {
+    const criteriaError = (message: string): boolean => {
+      if (scope === 'form') {
+        this.error.set(message);
+      } else {
+        this.endpointError.set(message);
+      }
+      return false;
+    };
+
+    const expectedCode = this.endpointForm.codeAttendu;
+    if (expectedCode === null || expectedCode === undefined || !Number.isInteger(Number(expectedCode)) || Number(expectedCode) < 100 || Number(expectedCode) > 599) {
+      return criteriaError('Le code HTTP attendu est obligatoire et doit être un nombre entier entre 100 et 599.');
+    }
+
+    const maxResponseTime = this.endpointForm.tempsMaxMs;
+    if (maxResponseTime === null || maxResponseTime === undefined || !Number.isFinite(Number(maxResponseTime)) || Number(maxResponseTime) < 0) {
+      return criteriaError('Le temps de réponse maximal est obligatoire et doit être un nombre positif ou nul.');
+    }
+
+    return true;
+  }
+
+  private validateEndpointRequest(scope: 'form' | 'endpoint'): boolean {
+    const endpointError = (message: string): boolean => {
+      if (scope === 'form') {
+        this.error.set(message);
+      } else {
+        this.endpointError.set(message);
+      }
+      return false;
+    };
+
+    if (!(this.endpointForm.nom || '').trim()) {
+      return endpointError('Renseignez le nom du premier endpoint.');
+    }
+
+    const path = (this.endpointForm.chemin || '').trim();
+    if (!/^\/(?:[A-Za-z0-9._~!$&'()*+,;=:@%/-]*)$/.test(path)) {
+      return endpointError('Le chemin doit commencer par /, ne contenir aucun espace et ne doit pas inclure de query string (exemple : /api/v1/users).');
+    }
+
+    const params = this.endpointParams.filter((param) => param.enabled || param.key || param.value);
+    for (const param of params) {
+      if (!param.key.trim()) {
+        return endpointError('Chaque paramètre d’URL doit avoir un nom.');
+      }
+      if (!/^[^\s&=]+$/.test(param.key.trim())) {
+        return endpointError(`Le nom du paramètre "${param.key}" est invalide : utilisez un nom sans espace, & ou =.`);
+      }
+      if (/[\s&]/.test(param.value)) {
+        return endpointError(`La valeur du paramètre "${param.key}" ne doit pas contenir d’espace ou de caractère & non encodé.`);
+      }
+    }
+
+    const rawParams = (this.endpointForm.params || '').trim();
+    if (rawParams && !rawParams.split('&').every((pair) => /^[^\s&=]+=[^\s&]*$/.test(pair))) {
+      return endpointError('La query string doit suivre le format nom=valeur&autreNom=autreValeur, sans espace.');
+    }
+
+    const headers = this.endpointHeaders.filter((header) => header.enabled || header.key || header.value);
+    for (const header of headers) {
+      if (!header.key.trim() || !header.value.trim()) {
+        return endpointError('Chaque header doit avoir un nom et une valeur.');
+      }
+      if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(header.key.trim())) {
+        return endpointError(`Le nom du header "${header.key}" est invalide.`);
+      }
+      if (/[\r\n]/.test(header.value)) {
+        return endpointError(`La valeur du header "${header.key}" ne peut pas contenir de retour à la ligne.`);
+      }
+    }
+
+    return true;
   }
 
   openDeleteConfirm(title: string, message: string, action: () => void, actionLabel = 'Supprimer'): void {
