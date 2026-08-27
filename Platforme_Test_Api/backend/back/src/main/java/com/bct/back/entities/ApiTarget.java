@@ -48,5 +48,10 @@ public class ApiTarget {
     @OneToMany(mappedBy = "target", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Endpoint> endpoints = new ArrayList<>();
-}
 
+    // Soft delete: distinct from `actif` (which tracks ping reachability, not
+    // deletion). Hidden from normal listings, but the row stays intact so
+    // Endpoint rows referencing it keep resolving normally.
+    @Builder.Default
+    private Boolean deleted = false;
+}

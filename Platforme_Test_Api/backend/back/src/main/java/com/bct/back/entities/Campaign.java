@@ -43,4 +43,10 @@ public class Campaign {
     @JsonIgnoreProperties({"campaign"})
     @Builder.Default
     private List<CampaignTestCase> testCases = new ArrayList<>();
+
+    // Soft delete: hidden from normal listings, but the row (and its testCases
+    // list) stays intact so CampaignLaunch history and the History page's
+    // expand-view keep working after "deletion".
+    @Builder.Default
+    private Boolean deleted = false;
 }

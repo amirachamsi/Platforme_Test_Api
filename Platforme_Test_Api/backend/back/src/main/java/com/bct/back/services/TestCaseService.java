@@ -22,12 +22,12 @@ public class TestCaseService {
 
     @Transactional(readOnly = true)
     public List<TestCase> findAll() {
-        return testCaseRepository.findAll();
+        return testCaseRepository.findByDeletedFalse();
     }
 
     @Transactional(readOnly = true)
     public List<TestCase> findByEndpointId(Long endpointId) {
-        return testCaseRepository.findByEndpointId(endpointId);
+        return testCaseRepository.findByEndpointIdAndDeletedFalse(endpointId);
     }
 
     @Transactional(readOnly = true)
@@ -40,6 +40,7 @@ public class TestCaseService {
     public TestCase create(TestCase payload) {
         payload.setId(null);
         payload.setEndpoint(resolveEndpoint(payload.getEndpoint()));
+        payload.setDeleted(false);
         return testCaseRepository.save(payload);
     }
 
@@ -77,11 +78,9 @@ public class TestCaseService {
     }
 
     public void delete(Long id) {
-        if (!testCaseRepository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Cas de test introuvable, id=" + id);
-        }
-        testCaseRepository.deleteById(id);
+        TestCase testCase = findById(id);
+        testCase.setDeleted(true);
+        testCaseRepository.save(testCase);
     }
 
     private Endpoint resolveEndpoint(Endpoint endpointRef) {

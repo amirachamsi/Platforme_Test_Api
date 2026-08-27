@@ -29,7 +29,7 @@ public class CampaignService {
 
     @Transactional(readOnly = true)
     public List<Campaign> findAll() {
-        return campaignRepository.findAll();
+        return campaignRepository.findByDeletedFalse();
     }
 
     @Transactional(readOnly = true)
@@ -67,10 +67,9 @@ public class CampaignService {
     }
 
     public void delete(Long id) {
-        if (!campaignRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Campagne introuvable, id=" + id);
-        }
-        campaignRepository.deleteById(id);
+        Campaign campaign = findById(id);
+        campaign.setDeleted(true);
+        campaignRepository.save(campaign);
     }
 
     /**

@@ -73,4 +73,10 @@ public class TestCase {
     @Column(name = "nombre_requetes")
     @Builder.Default
     private Integer nombreRequetes = 100;
+
+    // Soft delete: hidden from normal listings, but the row stays intact so
+    // Execution/CampaignTestCase rows referencing it keep resolving to full,
+    // real data (name, thresholds, etc.) instead of going blank.
+    @Builder.Default
+    private Boolean deleted = false;
 }

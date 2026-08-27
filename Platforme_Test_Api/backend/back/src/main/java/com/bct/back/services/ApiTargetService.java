@@ -1,9 +1,11 @@
 package com.bct.back.services;
 
 import com.bct.back.entities.ApiTarget;
+import com.bct.back.entities.Endpoint;
 import com.bct.back.enums.AuthType;
 import com.bct.back.enums.KeyLocation;
 import com.bct.back.repositories.ApiTargetRepository;
+import com.bct.back.repositories.EndpointRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,18 +21,20 @@ import java.util.List;
 public class ApiTargetService {
 
     private final ApiTargetRepository repository;
+    private final EndpointRepository endpointRepository;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
             .build();
 
-    public ApiTargetService(ApiTargetRepository repository) {
+    public ApiTargetService(ApiTargetRepository repository, EndpointRepository endpointRepository) {
         this.repository = repository;
+        this.endpointRepository = endpointRepository;
     }
 
     // Simple lecture, sans effet de bord : pas de ping ici (voir pingAndRefresh).
     public List<ApiTarget> findAll() {
-        return repository.findAll();
+        return repository.findByDeletedFalse();
     }
 
     public ApiTarget findById(Long id) {
@@ -41,6 +45,7 @@ public class ApiTargetService {
 
     public ApiTarget create(ApiTarget target) {
         target.setId(null); // évite un UPDATE accidentel si un id est déjà présent dans le payload
+        target.setDeleted(false);
         return repository.save(target);
     }
 
@@ -61,11 +66,19 @@ public class ApiTargetService {
     }
 
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Cible introuvable (id=" + id + ")");
+        ApiTarget target = findById(id);
+        target.setDeleted(true);
+        repository.save(target);
+
+        // Mirrors the old orphanRemoval/cascade behaviour (deleting a target used
+        // to wipe its endpoints too), just soft instead of hard — a deleted
+        // target's endpoints shouldn't keep appearing as selectable options
+        // elsewhere, but PingResult/TestCase rows referencing them still resolve.
+        List<Endpoint> endpoints = endpointRepository.findByTargetIdAndDeletedFalse(id);
+        for (Endpoint ep : endpoints) {
+            ep.setDeleted(true);
         }
-        repository.deleteById(id);
+        endpointRepository.saveAll(endpoints);
     }
 
     // Endpoint explicite (ex. POST /api/targets/{id}/ping) : opération à effet de bord,

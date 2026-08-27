@@ -36,12 +36,12 @@ public class EndpointService {
 
     @Transactional(readOnly = true)
     public List<Endpoint> findAll() {
-        return apiEndpointRepository.findAll();
+        return apiEndpointRepository.findByDeletedFalse();
     }
 
     @Transactional(readOnly = true)
     public List<Endpoint> findByTargetId(Long targetId) {
-        return apiEndpointRepository.findByTargetId(targetId);
+        return apiEndpointRepository.findByTargetIdAndDeletedFalse(targetId);
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +58,7 @@ public class EndpointService {
                     .orElseThrow(() -> new RuntimeException("ApiTarget introuvable avec l'id : " + endpoint.getTarget().getId()));
             endpoint.setTarget(target);
         }
+        endpoint.setDeleted(false);
         return apiEndpointRepository.save(endpoint);
     }
 
@@ -81,11 +82,9 @@ public class EndpointService {
     }
 
     public void delete(Long id) {
-        if (!apiEndpointRepository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Endpoint introuvable, id=" + id);
-        }
-        apiEndpointRepository.deleteById(id);
+        Endpoint endpoint = findById(id);
+        endpoint.setDeleted(true);
+        apiEndpointRepository.save(endpoint);
     }
 
     // Le frontend envoie `target: { id }`; on résout la véritable entité gérée par JPA

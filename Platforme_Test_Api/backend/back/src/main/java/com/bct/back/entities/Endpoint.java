@@ -51,4 +51,10 @@ public class Endpoint {
 
     @Builder.Default
     private Boolean status=null;
+
+    // Soft delete: hidden from normal listings, but the row stays intact so
+    // TestCase/PingResult rows referencing it keep resolving to full, real
+    // data instead of going blank.
+    @Builder.Default
+    private Boolean deleted = false;
 }

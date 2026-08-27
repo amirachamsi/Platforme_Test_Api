@@ -7,4 +7,9 @@ import java.util.List;
 
 public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
     List<TestCase> findByEndpointId(Long endpointId);
+
+    // Used by listing endpoints — excludes soft-deleted rows. findById() stays
+    // unfiltered so Execution/CampaignTestCase can still resolve deleted ones.
+    List<TestCase> findByDeletedFalse();
+    List<TestCase> findByEndpointIdAndDeletedFalse(Long endpointId);
 }
