@@ -61,13 +61,7 @@ public class K6Runner {
             }
 
             if (snapshot.body() != null && !snapshot.body().isBlank()) {
-                // Passed via a file rather than "-e BODY=...": Windows' process-argument
-                // quoting can mangle a raw JSON string containing quotes/braces on the
-                // command line, corrupting the payload before it reaches the target server
-                // (a very plausible cause of "500 on POST but the JSON looks fine to me").
-                // k6's open() (called from init context, i.e. testcase-runner.js's top
-                // level, not inside default()) reads the file exactly as written — no
-                // shell/CLI parsing involved at all.
+
                 bodyPath = Files.createTempFile("k6-body-" + snapshot.testCaseId() + "-", ".json");
                 Files.writeString(bodyPath, snapshot.body(), StandardCharsets.UTF_8);
                 cmd.add("-e");

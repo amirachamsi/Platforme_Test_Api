@@ -48,7 +48,10 @@ public class K6ResultParser {
             // never happens at scale and previously made near-perfect runs show as ECHOUEE).
             boolean thresholdsPassed = !hasFailedThreshold(metrics);
             TestStatus statut;
-            if (thresholdsPassed) {
+            if (totalRequests == 0) {
+                // Aucune requête exécutée : le test n'a rien prouvé, il ne doit pas apparaître comme réussi.
+                statut = TestStatus.ECHOUEE;
+            } else if (thresholdsPassed) {
                 statut = TestStatus.REUSSIE;
             } else if (successRatio >= 0.5) {
                 // Thresholds weren't met (e.g. P95 or error rate crept past your configured

@@ -16,6 +16,9 @@ env:
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/bct-backend
 
 jobs:
+  # ============================================================
+  # JOB 1 : Build + tests unitaires (CI)
+  # ============================================================
   build-and-test:
     runs-on: ubuntu-latest
     defaults:
@@ -33,13 +36,8 @@ jobs:
           cache: 'maven'
 
       - name: Build + tests unitaires
+        # Tests unitaires isolés (mocks) : aucun accès à la base réelle n'est nécessaire.
         run: mvn -B clean verify
-        env:
-          JWT_SECRET: test-secret-key-for-ci-only-not-used-in-prod
-          JWT_EXPIRATION: 86400000
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
 
   # ============================================================
   # JOB 2 : Build & push de l'image Docker — main ET amira (phase de test)
