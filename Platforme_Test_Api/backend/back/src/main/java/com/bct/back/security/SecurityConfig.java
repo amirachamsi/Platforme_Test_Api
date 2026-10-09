@@ -25,11 +25,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/targets", "/api/endpoints/**", "/api/testcases/**", "/api/executions/**", "/api/campaigns/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/targets", "/api/endpoints/**", "/api/testcases/**", "/api/executions/**", "/api/campaigns/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/targets/**", "/api/endpoints/**", "/api/testcases/**", "/api/executions/**", "/api/campaigns/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/targets/**", "/api/endpoints/**", "/api/testcases/**", "/api/executions/**", "/api/campaigns/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -9,3 +9,15 @@ frontend/.angular/
 # Env
 .env
 *.log
+
+
+# IntelliJ
+.idea/
+
+# Fichiers compilés
+target/
+
+# Clés SSH
+deploy_key
+deploy_key.pub
+deploy_key_ascii.pub

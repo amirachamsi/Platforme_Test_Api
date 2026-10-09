@@ -71,33 +71,44 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ============================================================
-  # JOB 3 : Déploiement sur le PC perso — via SSH
+  # JOB 3 : Déploiement — exécuté sur le PC par le runner auto-hébergé
+  # (aucune connexion entrante : le runner va chercher la tâche lui-même)
   # ============================================================
   deploy:
     needs: docker-build-push
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Déployer sur le PC via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          script: |
-            docker network inspect app-net >NUL 2>&1 || docker network create app-net
-            docker pull ${{ env.IMAGE_NAME }}:latest
-            docker stop bct-backend
-            docker rm bct-backend
-            docker run -d --name bct-backend --network app-net --restart unless-stopped -p 8081:8081 ^
-              -e SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}" ^
-              -e SPRING_DATASOURCE_USERNAME="${{ secrets.SPRING_DATASOURCE_USERNAME }}" ^
-              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}" ^
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" ^
-              -e JWT_EXPIRATION="${{ secrets.JWT_EXPIRATION }}" ^
-              -e MAIL_HOST="${{ secrets.MAIL_HOST }}" ^
-              -e MAIL_PORT="${{ secrets.MAIL_PORT }}" ^
-              -e MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" ^
-              -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" ^
-              ${{ env.IMAGE_NAME }}:latest
-            docker image prune -f
+      - name: Déployer le conteneur backend
+        shell: cmd
+        # Les secrets sont placés dans l'environnement de l'étape ; "docker run -e NOM"
+        # (sans valeur) les transmet au conteneur sans les écrire dans la ligne de commande.
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+        run: |
+          docker network inspect app-net >NUL 2>&1 || docker network create app-net
+          docker pull ${{ env.IMAGE_NAME }}:latest || exit /b 1
+          docker rm -f bct-backend >NUL 2>&1
+          docker run -d --name bct-backend --network app-net --restart unless-stopped -p 8081:8081 ^
+            -e SPRING_DATASOURCE_URL ^
+            -e SPRING_DATASOURCE_USERNAME ^
+            -e SPRING_DATASOURCE_PASSWORD ^
+            -e JWT_SECRET ^
+            -e JWT_EXPIRATION ^
+            -e ADMIN_EMAIL ^
+            -e ADMIN_PASSWORD ^
+            -e MAIL_HOST ^
+            -e MAIL_PORT ^
+            -e MAIL_USERNAME ^
+            -e MAIL_PASSWORD ^
+            ${{ env.IMAGE_NAME }}:latest || exit /b 1
+          docker image prune -f

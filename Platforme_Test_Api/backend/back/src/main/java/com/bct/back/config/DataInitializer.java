@@ -18,10 +18,10 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${ADMIN_EMAIL:admin@bct.tn}")
+    @Value("${ADMIN_EMAIL}")
     private String adminEmail;
 
-    @Value("${ADMIN_PASSWORD:123456789}")
+    @Value("${ADMIN_PASSWORD}")
     private String adminPassword;
 
     @Override
