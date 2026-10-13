@@ -15,6 +15,9 @@ RUN mvn -B clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Moteur de test k6, copié depuis son image officielle
+COPY --from=grafana/k6:latest /usr/bin/k6 /usr/bin/k6
+
 # Utilisateur non-root pour la sécurité
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring
